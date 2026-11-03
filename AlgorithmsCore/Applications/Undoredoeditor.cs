@@ -1,4 +1,4 @@
-﻿namespace AlgorithmsCore.Applications;
+namespace AlgorithmsCore.Applications;
 
 // ПРИМЕНЕНИЕ СТЕКА: Undo/Redo в текстовом редакторе.
 // Два стека: в undo лежат выполненные действия (последнее сверху, LIFO),
@@ -7,7 +7,11 @@
 public class UndoRedoEditor
 {
     // Действие хранит и добавленный, и удалённый текст, чтобы его можно было отменить
-    private record EditAction(string Added, string Removed);
+    public record EditAction(string Added, string Removed)
+    {
+        public override string ToString() =>
+            !string.IsNullOrEmpty(Added) ? $"Ввод: \"{Added}\"" : $"Удаление: \"{Removed}\"";
+    }
 
     private string text = "";
     private DataStructures.Stack<EditAction> undoStack = new();
@@ -15,9 +19,20 @@ public class UndoRedoEditor
 
     public string Text => text;
 
+    public List<EditAction> GetUndoActions() => undoStack.ToList();
+    public List<EditAction> GetRedoActions() => redoStack.ToList();
+
+    public void Clear()
+    {
+        text = "";
+        undoStack = new DataStructures.Stack<EditAction>();
+        redoStack = new DataStructures.Stack<EditAction>();
+    }
+
     // Напечатать текст в конец
     public void Type(string added)
     {
+        if (string.IsNullOrEmpty(added)) return;
         text += added;
         undoStack.Push(new EditAction(added, ""));
         redoStack = new DataStructures.Stack<EditAction>(); // ветка redo больше не актуальна

@@ -1,0 +1,142 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="using:AlgorithmsUI.Controls"
+             x:Class="AlgorithmsUI.Views.QueueView">
+    <Grid RowDefinitions="Auto,*" ColumnDefinitions="360,*" Margin="24,20,24,24">
+        <!-- Header -->
+        <StackPanel Grid.ColumnSpan="2" Spacing="4" Margin="0,0,0,16">
+            <TextBlock Classes="h1" Text="2 часть. Структура данных Очередь (FIFO)" />
+            <TextBlock Classes="subtitle"
+                       Text="Сравнение двух реализаций: MyQueue (на базе собственного связного списка) и StandardQueue (BCL). Вставка в конец, извлечение из начала за O(1). Замеры времени на наборах различной длины и различного состава операций." />
+        </StackPanel>
+
+        <!-- Left Column: Controls & Inputs -->
+        <DockPanel Grid.Row="1">
+            <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                <StackPanel Spacing="12" Margin="0,0,0,12">
+                    <!-- Tab Switcher -->
+                    <Border Classes="card">
+                        <StackPanel Spacing="8">
+                            <TextBlock Classes="section" Text="РЕЖИМ РАБОТЫ" />
+                            <Grid ColumnDefinitions="*,*" ColumnSpacing="4">
+                                <Button x:Name="TabOpsBtn" Content="Операции" Classes="wide accent" />
+                                <Button Grid.Column="1" x:Name="TabBenchBtn" Content="Сравнение (Бенчмарк)" Classes="wide" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- PANEL 1: OPERATIONS (input.txt) -->
+                    <StackPanel x:Name="PanelOperations" Spacing="12">
+                        <Border Classes="card">
+                            <StackPanel Spacing="10">
+                                <TextBlock Classes="section" Text="ВЫБОР РЕАЛИЗАЦИИ" />
+                                <RadioButton x:Name="RadioMyQueue" GroupName="QueueImpl" Content="MyQueue (Свой связный список)" IsChecked="True" />
+                                <RadioButton x:Name="RadioStdQueue" GroupName="QueueImpl" Content="StandardQueue (System.Collections.Generic)" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Classes="card">
+                            <StackPanel Spacing="10">
+                                <TextBlock Classes="section" Text="ПОСЛЕДОВАТЕЛЬНОСТЬ ОПЕРАЦИЙ (INPUT.TXT)" />
+                                <TextBlock Classes="hint" Text="1,x — Enqueue(x)  |  2 — Dequeue()  |  3 — Top()  |  4 — IsEmpty()  |  5 — Print()" />
+                                <TextBox x:Name="CommandsInput" Text="3 4 1,56 1,7 1,cat 2 5 4" TextWrapping="Wrap" AcceptsReturn="True" Height="64" />
+                                
+                                <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                                    <Button x:Name="LoadFileBtn" Content="Из input.txt" Classes="wide" />
+                                    <Button Grid.Column="1" x:Name="SaveFileBtn" Content="В input.txt" Classes="wide" />
+                                </Grid>
+
+                                <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                                    <Button x:Name="PresetDocBtn" Content="Пример из задания" Classes="wide" />
+                                    <Button Grid.Column="1" x:Name="PresetRandomBtn" Content="Случайный набор" Classes="wide" />
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Classes="card">
+                            <StackPanel Spacing="8">
+                                <Button x:Name="RunAllBtn" Content="Выполнить всё" Classes="wide accent" ToolTip.Tip="Пробел" />
+                                <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                                    <Button x:Name="StepBtn" Content="Шаг вперед" Classes="wide" ToolTip.Tip="→" />
+                                    <Button Grid.Column="1" x:Name="ResetBtn" Content="Сначала" Classes="wide" ToolTip.Tip="R" />
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Classes="card">
+                            <StackPanel Spacing="8">
+                                <TextBlock Classes="section" Text="ПОКАЗАТЕЛИ ОЧЕРЕДИ" />
+                                <controls:StatRow x:Name="StatCurrentSize" Label="Элементов в очереди" Value="0" />
+                                <controls:StatRow x:Name="StatHeadElem" Label="Голова (Head/Top)" Value="—" />
+                                <controls:StatRow x:Name="StatTailElem" Label="Хвост (Tail)" Value="—" />
+                                <controls:StatRow x:Name="StatStepProgress" Label="Текущий шаг" Value="0 / 0" />
+                                <controls:StatRow x:Name="StatExecTime" Label="Время выполнения" Value="—" />
+                                <controls:StatRow x:Name="StatComplexity" Label="Теоретическая сложность" Value="O(1)" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Classes="card" Padding="0">
+                            <DockPanel MinHeight="140" MaxHeight="220">
+                                <TextBlock DockPanel.Dock="Top" Classes="section" Text="ЖУРНАЛ ОПЕРАЦИЙ" Margin="16,12,16,4" />
+                                <ListBox x:Name="OpsLogList" Classes="log" Background="Transparent" />
+                            </DockPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- PANEL 2: COMPARATIVE BENCHMARK -->
+                    <StackPanel x:Name="PanelBenchmark" Spacing="12" IsVisible="False">
+                        <Border Classes="card">
+                            <StackPanel Spacing="10">
+                                <TextBlock Classes="section" Text="ПАРАМЕТРЫ СРАВНЕНИЯ ОЧЕРЕДЕЙ" />
+                                <TextBlock Classes="hint" Text="Замер времени MyQueue vs StandardQueue на разных наборах" />
+                                
+                                <TextBlock Classes="label" Text="Число операций (разная длина)" />
+                                <ComboBox x:Name="BenchCountCombo" SelectedIndex="1">
+                                    <ComboBoxItem Content="10 000 операций" />
+                                    <ComboBoxItem Content="50 000 операций" />
+                                    <ComboBoxItem Content="100 000 операций" />
+                                    <ComboBoxItem Content="250 000 операций" />
+                                    <ComboBoxItem Content="500 000 операций" />
+                                </ComboBox>
+
+                                <TextBlock Classes="label" Text="Состав операций (разный состав)" />
+                                <ComboBox x:Name="BenchMixCombo" SelectedIndex="1">
+                                    <ComboBoxItem Content="Смешанный (50% Enqueue / 50% Dequeue)" />
+                                    <ComboBoxItem Content="Только вставки (100% Enqueue — макс. расхождение)" />
+                                    <ComboBoxItem Content="Пакетный (85% Enqueue / 15% Dequeue)" />
+                                </ComboBox>
+
+                                <Button x:Name="RunCompareBtn" Content="Запустить сравнение (Замер времени)" Classes="wide accent" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Classes="card">
+                            <StackPanel Spacing="8">
+                                <TextBlock Classes="section" Text="РЕЗУЛЬТАТЫ СРАВНЕНИЯ" />
+                                <controls:StatRow x:Name="StatBenchOps" Label="Всего операций" Value="—" />
+                                <controls:StatRow x:Name="StatMyQueueTime" Label="MyQueue (Свой список)" Value="—" />
+                                <controls:StatRow x:Name="StatStdQueueTime" Label="StandardQueue (BCL)" Value="—" />
+                                <controls:StatRow x:Name="StatDifference" Label="Разница времени (Δ)" Value="—" />
+                                <controls:StatRow x:Name="StatRatio" Label="Соотношение скорости" Value="—" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Classes="card">
+                            <StackPanel Spacing="6">
+                                <TextBlock Classes="section" Text="АНАЛИЗ И ВЫВОДЫ" />
+                                <TextBlock Classes="hint" Text="• StandardQueue использует кольцевой массив в непрерывной памяти: высокий Cache Hit, минимальный overhead аллокатора." />
+                                <TextBlock Classes="hint" Text="• MyQueue выделяет отдельный объект Node в куче на каждый элемент: дополнительная нагрузка на сборщик мусора (GC) и промахи кэша процессора." />
+                                <TextBlock Classes="hint" Text="• При наборе «Только вставки (100% Enqueue)» расхождение максимальное из-за непрерывного выделения миллионов узлов в куче." />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </DockPanel>
+
+        <!-- Right Column: Canvas / Visualizer -->
+        <Border Grid.Row="1" Grid.Column="1" Classes="canvas">
+            <controls:QueueCanvas x:Name="VisualCanvas" Margin="16" />
+        </Border>
+    </Grid>
+</UserControl>

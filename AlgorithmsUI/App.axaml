@@ -1,0 +1,14 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="AlgorithmsUI.App"
+             RequestedThemeVariant="Dark">
+    <Application.Styles>
+        <FluentTheme>
+            <FluentTheme.Palettes>
+                <!-- Same values as Palette.Accent and Palette.Background: Fluent derives its control colors from them. -->
+                <ColorPaletteResources x:Key="Dark" Accent="#2563EB" RegionColor="#0F172A" />
+            </FluentTheme.Palettes>
+        </FluentTheme>
+        <StyleInclude Source="avares://AlgorithmsUI/Theme/AppStyles.axaml" />
+    </Application.Styles>
+</Application>

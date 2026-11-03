@@ -1,0 +1,193 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="using:AlgorithmsUI.Controls"
+             x:Class="AlgorithmsUI.Views.ApplicationsView">
+    <Grid RowDefinitions="Auto,*" ColumnDefinitions="380,*" Margin="24,20,24,24">
+        <!-- Header -->
+        <StackPanel Grid.ColumnSpan="2" Spacing="4" Margin="0,0,0,16">
+            <TextBlock Classes="h1" Text="3 часть. Применение динамических структур" />
+            <TextBlock Classes="subtitle"
+                       Text="Реальные сценарии использования: Список для сложения бесконечно длинных чисел столбиком, Стек для системы отмены/повтора (Undo/Redo), Очередь для карусельного планировщика процессов ОС (Round Robin)." />
+        </StackPanel>
+
+        <!-- Left Column: Controls & Panels -->
+        <DockPanel Grid.Row="1">
+            <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                <StackPanel Spacing="12" Margin="0,0,0,12">
+                    <!-- Tab Switcher -->
+                    <Border Classes="card">
+                        <StackPanel Spacing="8">
+                            <TextBlock Classes="section" Text="ВЫБОР ПРИМЕНЕНИЯ" />
+                            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="4">
+                                <Button x:Name="TabAdderBtn" Content="Длинные числа" Classes="wide accent" />
+                                <Button Grid.Column="1" x:Name="TabEditorBtn" Content="Undo / Redo" Classes="wide" />
+                                <Button Grid.Column="2" x:Name="TabRobinBtn" Content="Round Robin" Classes="wide" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- TAB 1: LONG NUMBER ADDER -->
+                    <StackPanel x:Name="PanelAdder" Spacing="12">
+                        <Border Classes="card">
+                            <StackPanel Spacing="10">
+                                <TextBlock Classes="section" Text="СЛОЖЕНИЕ ДЛИННЫХ ЧИСЕЛ (СПИСОК)" />
+                                <TextBlock Classes="hint" Text="Цифры хранятся в связном списке от младших к старшим: O(max(N,M))" />
+                                
+                                <TextBlock Classes="label" Text="Число A:" />
+                                <TextBox x:Name="AdderNumAInput" Text="99999999999999999999999999" TextWrapping="Wrap" />
+
+                                <TextBlock Classes="label" Text="Число B:" />
+                                <TextBox x:Name="AdderNumBInput" Text="1" TextWrapping="Wrap" />
+
+                                <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                                    <Button x:Name="AdderRunBtn" Content="Сложить всё" Classes="wide accent" />
+                                    <Button Grid.Column="1" x:Name="AdderStepBtn" Content="Шаг сложения →" Classes="wide" />
+                                </Grid>
+
+                                <TextBlock Classes="section" Text="ПРЕСЕТЫ ЧИСЕЛ" Margin="0,4,0,0" />
+                                <Button x:Name="AdderPresetNinesBtn" Content="999...999 + 1 (Каскад переносов)" Classes="wide" />
+                                <Button x:Name="AdderPresetHugeBtn" Content="30-значные числа" Classes="wide" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Classes="card">
+                            <StackPanel Spacing="8">
+                                <TextBlock Classes="section" Text="ПОКАЗАТЕЛИ СЛОЖЕНИЯ" />
+                                <controls:StatRow x:Name="StatAdderDigitsA" Label="Разрядов в числе A" Value="—" />
+                                <controls:StatRow x:Name="StatAdderDigitsB" Label="Разрядов в числе B" Value="—" />
+                                <controls:StatRow x:Name="StatAdderDigitsRes" Label="Разрядов в сумме" Value="—" />
+                                <controls:StatRow x:Name="StatAdderTime" Label="Время сложения" Value="—" />
+                                <controls:StatRow x:Name="StatAdderComplexity" Label="Сложность алгоритма" Value="O(max(N, M))" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Classes="card">
+                            <StackPanel Spacing="6">
+                                <TextBlock Classes="section" Text="РЕЗУЛЬТАТ (СУММА)" />
+                                <TextBox x:Name="AdderResultOutput" IsReadOnly="True" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- TAB 2: UNDO / REDO EDITOR -->
+                    <StackPanel x:Name="PanelEditor" Spacing="12" IsVisible="False">
+                        <Border Classes="card">
+                            <StackPanel Spacing="10">
+                                <TextBlock Classes="section" Text="ТЕКСТОВЫЙ РЕДАКТОР С UNDO/REDO (СТЕК)" />
+                                <TextBlock Classes="hint" Text="Два стека EditAction: стек отмен (Undo) и стек возвратов (Redo)" />
+                                
+                                <TextBlock Classes="label" Text="Текущий текст документа:" />
+                                <TextBox x:Name="EditorCurrentText" IsReadOnly="True" Height="70" TextWrapping="Wrap" />
+
+                                <TextBlock Classes="label" Text="Ввести текст (Type):" />
+                                <Grid ColumnDefinitions="*,100" ColumnSpacing="8">
+                                    <TextBox x:Name="EditorTypeInput" Text="Hello, world!" />
+                                    <Button Grid.Column="1" x:Name="EditorTypeBtn" Content="Ввести" Classes="wide accent" />
+                                </Grid>
+
+                                <TextBlock Classes="label" Text="Удалить символов (Delete):" />
+                                <Grid ColumnDefinitions="*,100" ColumnSpacing="8">
+                                    <NumericUpDown x:Name="EditorDeleteCount" Minimum="1" Maximum="100" Value="3" />
+                                    <Button Grid.Column="1" x:Name="EditorDeleteBtn" Content="Удалить" Classes="wide" />
+                                </Grid>
+
+                                <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                                    <Button x:Name="EditorUndoBtn" Content="↶ Отменить (Undo)" Classes="wide" />
+                                    <Button Grid.Column="1" x:Name="EditorRedoBtn" Content="↷ Повторить (Redo)" Classes="wide" />
+                                </Grid>
+
+                                <Button x:Name="EditorClearBtn" Content="Очистить редактор" Classes="wide" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Classes="card">
+                            <StackPanel Spacing="8">
+                                <TextBlock Classes="section" Text="СОСТОЯНИЕ СТЕКОВ РЕДАКТОРА" />
+                                <controls:StatRow x:Name="StatEditorUndoCount" Label="Действий в Undo стеке" Value="0" />
+                                <controls:StatRow x:Name="StatEditorRedoCount" Label="Действий в Redo стеке" Value="0" />
+                                <controls:StatRow x:Name="StatEditorLength" Label="Длина текущего текста" Value="0" />
+                            </StackPanel>
+                        </Border>
+
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                            <Border Classes="card" Padding="0">
+                                <DockPanel MinHeight="130" MaxHeight="180">
+                                    <TextBlock DockPanel.Dock="Top" Classes="section" Text="СТЕК UNDO" Margin="12,10,12,4" />
+                                    <ListBox x:Name="EditorUndoList" Classes="log" Background="Transparent" />
+                                </DockPanel>
+                            </Border>
+                            <Border Grid.Column="1" Classes="card" Padding="0">
+                                <DockPanel MinHeight="130" MaxHeight="180">
+                                    <TextBlock DockPanel.Dock="Top" Classes="section" Text="СТЕК REDO" Margin="12,10,12,4" />
+                                    <ListBox x:Name="EditorRedoList" Classes="log" Background="Transparent" />
+                                </DockPanel>
+                            </Border>
+                        </Grid>
+                    </StackPanel>
+
+                    <!-- TAB 3: ROUND ROBIN SCHEDULER -->
+                    <StackPanel x:Name="PanelRobin" Spacing="12" IsVisible="False">
+                        <Border Classes="card">
+                            <StackPanel Spacing="10">
+                                <TextBlock Classes="section" Text="ДИСПЕТЧЕР ROUND ROBIN (ОЧЕРЕДЬ)" />
+                                <TextBlock Classes="hint" Text="Процессы обслуживаются циклически квантами времени через MyQueue FIFO" />
+
+                                <TextBlock Classes="label" Text="Квант времени (Quantum):" />
+                                <Grid ColumnDefinitions="*,60" ColumnSpacing="10">
+                                    <Slider x:Name="RobinQuantumSlider" Minimum="1" Maximum="10" Value="3" />
+                                    <TextBlock Grid.Column="1" x:Name="RobinQuantumLabel" Text="3" Classes="stat-value" />
+                                </Grid>
+
+                                <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                                    <Button x:Name="RobinRunBtn" Content="Запустить симуляцию" Classes="wide accent" />
+                                    <Button Grid.Column="1" x:Name="RobinStepBtn" Content="По шагам →" Classes="wide" />
+                                </Grid>
+                                <Button x:Name="RobinResetBtn" Content="Сбросить к стандарту (P1, P2, P3)" Classes="wide" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Classes="card">
+                            <StackPanel Spacing="8">
+                                <TextBlock Classes="section" Text="СВОДНЫЕ МЕТРИКИ ПЛАНИРОВАНИЯ" />
+                                <controls:StatRow x:Name="StatRobinTotalTime" Label="Общее время работы" Value="—" />
+                                <controls:StatRow x:Name="StatRobinAvgWait" Label="Среднее время ожидания" Value="—" />
+                                <controls:StatRow x:Name="StatRobinAvgTurnaround" Label="Среднее время оборота" Value="—" />
+                                <controls:StatRow x:Name="StatRobinSlicesCount" Label="Всего переключений" Value="—" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Classes="card" Padding="0">
+                            <DockPanel MinHeight="140" MaxHeight="200">
+                                <TextBlock DockPanel.Dock="Top" Classes="section" Text="ТАБЛИЦА ПРОЦЕССОВ" Margin="16,12,16,4" />
+                                <ListBox x:Name="RobinProcessList" Classes="log" Background="Transparent" />
+                            </DockPanel>
+                        </Border>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </DockPanel>
+
+        <!-- Right Column: Context Canvas -->
+        <Border Grid.Row="1" Grid.Column="1" Classes="canvas">
+            <Panel>
+                <controls:AdditionCanvas x:Name="AdderCanvas" Margin="16" />
+                <controls:TimelineCanvas x:Name="TimelineCanvas" Margin="16" IsVisible="False" />
+                
+                <!-- Placeholder for Editor tab right area -->
+                <StackPanel x:Name="EditorDetailsPanel" Margin="24" Spacing="16" IsVisible="False" VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <TextBlock Classes="h1" Text="Архитектура Undo / Redo на двух стеках" HorizontalAlignment="Center" />
+                    <TextBlock Classes="subtitle" Text="При вводе нового текста создается действие и помещается в UndoStack, а RedoStack очищается (новая ветка истории). При нажатии Undo действие извлекается из UndoStack, отменяется и кладется в RedoStack. При Redo — наоборот." HorizontalAlignment="Center" MaxWidth="600" TextAlignment="Center" />
+                    <Border Classes="card" MaxWidth="500" HorizontalAlignment="Center">
+                        <StackPanel Spacing="8">
+                            <TextBlock Classes="section" Text="ВРЕМЕННАЯ СЛОЖНОСТЬ" />
+                            <TextBlock Classes="label" Text="• Type(text): O(1) push в стек отмен" />
+                            <TextBlock Classes="label" Text="• Delete(count): O(1) push в стек отмен" />
+                            <TextBlock Classes="label" Text="• Undo(): O(1) pop из undo + O(1) push в redo" />
+                            <TextBlock Classes="label" Text="• Redo(): O(1) pop из redo + O(1) push в undo" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Panel>
+        </Border>
+    </Grid>
+</UserControl>

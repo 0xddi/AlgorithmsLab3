@@ -1,0 +1,80 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="using:AlgorithmsUI.Controls"
+             x:Class="AlgorithmsUI.Views.ExpressionTreeView">
+    <Grid RowDefinitions="Auto,*" ColumnDefinitions="360,*" Margin="24,20,24,24">
+        <!-- Header -->
+        <StackPanel Grid.ColumnSpan="2" Spacing="4" Margin="0,0,0,16">
+            <TextBlock Classes="h1" Text="3 часть. Дерево выражений (Бинарное дерево)" />
+            <TextBlock Classes="subtitle"
+                       Text="Построение синтаксического дерева из постфиксной записи с помощью стека узлов. Рекурсивное вычисление и обходы (Infix, Prefix, Postfix) за линейное время O(n)." />
+        </StackPanel>
+
+        <!-- Left Column: Controls & Results -->
+        <DockPanel Grid.Row="1">
+            <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                <StackPanel Spacing="12" Margin="0,0,0,12">
+                    <!-- Expression Input -->
+                    <Border Classes="card">
+                        <StackPanel Spacing="10">
+                            <TextBlock Classes="section" Text="ПОСТФИКСНОЕ ВЫРАЖЕНИЕ" />
+                            <TextBlock Classes="hint" Text="Токены через пробел (+, -, *, /, :, ^, sqrt, sin, cos, ln)" />
+                            <TextBox x:Name="PostfixInput" Text="7 8 + 3 2 + :" TextWrapping="Wrap" />
+
+                            <Button x:Name="BuildTreeBtn" Content="Построить дерево и вычислить" Classes="wide accent" ToolTip.Tip="Пробел" />
+
+                            <TextBlock Classes="section" Text="ШАБЛОНЫ" Margin="0,4,0,0" />
+                            <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                <Button x:Name="PresetDocBtn" Content="Пример задания" Classes="wide" />
+                                <Button Grid.Column="1" x:Name="PresetComplexBtn" Content="Со степенями" Classes="wide" />
+                            </Grid>
+                            <Button x:Name="PresetFuncBtn" Content="С функциями (sqrt, sin)" Classes="wide" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Traversals & Result -->
+                    <Border Classes="card">
+                        <StackPanel Spacing="8">
+                            <TextBlock Classes="section" Text="РЕЗУЛЬТАТЫ И ОБХОДЫ ДЕРЕВА" />
+                            <controls:StatRow x:Name="StatResult" Label="Значение (Evaluate)" Value="—" />
+                            <Separator Background="{DynamicResource BorderBrush}" Height="1" Margin="0,4" />
+                            
+                            <TextBlock Classes="label" Text="Инфиксный обход (Infix со скобками):" />
+                            <TextBox x:Name="InfixResult" IsReadOnly="True" TextWrapping="Wrap" />
+
+                            <TextBlock Classes="label" Text="Префиксный обход (Prefix):" />
+                            <TextBox x:Name="PrefixResult" IsReadOnly="True" TextWrapping="Wrap" />
+
+                            <TextBlock Classes="label" Text="Постфиксный обход (Postfix):" />
+                            <TextBox x:Name="PostfixResult" IsReadOnly="True" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Tree Metrics -->
+                    <Border Classes="card">
+                        <StackPanel Spacing="8">
+                            <TextBlock Classes="section" Text="ПАРАМЕТРЫ ДЕРЕВА" />
+                            <controls:StatRow x:Name="StatNodes" Label="Всего узлов в дереве" Value="—" />
+                            <controls:StatRow x:Name="StatDepth" Label="Максимальная глубина (высота)" Value="—" />
+                            <controls:StatRow x:Name="StatBuildTime" Label="Время расчёта" Value="—" />
+                            <controls:StatRow x:Name="StatComplexity" Label="Сложность обходов" Value="O(n) — 1 проход" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Log -->
+                    <Border Classes="card" Padding="0">
+                        <DockPanel MinHeight="100" MaxHeight="160">
+                            <TextBlock DockPanel.Dock="Top" Classes="section" Text="ЖУРНАЛ" Margin="16,12,16,4" />
+                            <ListBox x:Name="TreeLogList" Classes="log" Background="Transparent" />
+                        </DockPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </DockPanel>
+
+        <!-- Right Column: Canvas / Visualizer -->
+        <Border Grid.Row="1" Grid.Column="1" Classes="canvas">
+            <controls:TreeCanvas x:Name="VisualCanvas" Margin="16" />
+        </Border>
+    </Grid>
+</UserControl>
