@@ -73,14 +73,12 @@ public sealed class LinkedListCanvas : Control
 
         if (_secondaryList != null && _secondaryList.Count > 0)
         {
-            // Draw two lists: List 1 in upper half, List 2 in lower half
-            DrawSingleList(context, _primaryList, "СПИСОК 1 (ДО РАЗДЕЛЕНИЯ):", 50, w);
+            DrawSingleList(context, _primaryList, "СПИСОК 1 (ДО РАЗДЕЛЕНИЯ):", 45, w);
             DrawSingleList(context, _secondaryList, "СПИСОК 2 (ПОСЛЕ РАЗДЕЛЕНИЯ):", h / 2 + 30, w);
         }
         else
         {
-            // Draw single list centered
-            double startY = Math.Max(70, h / 2 - 40);
+            double startY = Math.Max(60, h / 2 - 60);
             DrawSingleList(context, _primaryList, "СВЯЗНЫЙ СПИСОК (HEAD ──► TAIL):", startY, w);
         }
 
@@ -93,7 +91,7 @@ public sealed class LinkedListCanvas : Control
                 new Typeface("Cascadia Mono, Consolas", FontStyle.Normal, FontWeight.SemiBold),
                 12,
                 Palette.Brush(Palette.VizDone));
-            context.DrawText(actionText, new Point((w - actionText.Width) / 2, h - 30));
+            context.DrawText(actionText, new Point((w - actionText.Width) / 2, h - 26));
         }
     }
 
@@ -106,7 +104,7 @@ public sealed class LinkedListCanvas : Control
             new Typeface("Inter, Segoe UI", FontStyle.Normal, FontWeight.SemiBold),
             12,
             MutedTextBrush);
-        context.DrawText(titleText, new Point(30, startY - 30));
+        context.DrawText(titleText, new Point(30, startY - 28));
 
         if (list.Count == 0)
         {
@@ -123,12 +121,14 @@ public sealed class LinkedListCanvas : Control
 
         double nodeWidth = 76;
         double nodeHeight = 44;
-        double arrowLength = 36;
+        double arrowLength = 34;
         double stepX = nodeWidth + arrowLength;
-        double paddingLeft = 30;
+        double paddingLeft = 44;
+        double rowGap = 58;
+        double rowPitch = nodeHeight + rowGap;
 
         // Auto-wrap rows if nodes exceed canvas width
-        int nodesPerRow = Math.Max(1, (int)((width - paddingLeft - 80) / stepX));
+        int nodesPerRow = Math.Max(1, (int)((width - paddingLeft - 60) / stepX));
 
         for (int i = 0; i < list.Count; i++)
         {
@@ -136,7 +136,7 @@ public sealed class LinkedListCanvas : Control
             int col = i % nodesPerRow;
 
             double x = paddingLeft + col * stepX;
-            double y = startY + row * (nodeHeight + 50);
+            double y = startY + row * rowPitch;
 
             bool isHead = (i == 0);
             bool isTail = (i == list.Count - 1);
@@ -168,18 +168,19 @@ public sealed class LinkedListCanvas : Control
             context.FillRectangle(ArrowBrush, new Rect(dotCenterX - 3, dotCenterY - 3, 6, 6), 3);
 
             // Arrow to next node or null
-            double arrowEndX = x + nodeWidth + arrowLength;
             if (i < list.Count - 1)
             {
                 if (col < nodesPerRow - 1)
                 {
-                    // Regular right arrow
+                    // Regular right arrow in the same row
+                    double arrowEndX = x + nodeWidth + arrowLength;
                     DrawArrow(context, new Point(dotCenterX, dotCenterY), new Point(arrowEndX, dotCenterY));
                 }
                 else
                 {
-                    // Wrap-around arrow to next line
-                    DrawWrapArrow(context, new Point(dotCenterX, dotCenterY), new Point(paddingLeft, y + nodeHeight + 50 + nodeHeight / 2));
+                    // Multi-line wrap arrow to next row (Option 1: down channel, across left, down into row)
+                    double nextRowY = y + rowPitch;
+                    DrawWrapArrow(context, new Point(dotCenterX, dotCenterY), x + nodeWidth, y + nodeHeight, nextRowY, paddingLeft, nodeHeight);
                 }
             }
             else
@@ -225,7 +226,6 @@ public sealed class LinkedListCanvas : Control
     private static void DrawArrow(DrawingContext context, Point from, Point to)
     {
         context.DrawLine(ArrowPen, from, to);
-        // Arrow head
         var headGeo = new StreamGeometry();
         using (var ctx = headGeo.Open())
         {
@@ -236,18 +236,38 @@ public sealed class LinkedListCanvas : Control
         context.DrawGeometry(ArrowBrush, ArrowPen, headGeo);
     }
 
-    private static void DrawWrapArrow(DrawingContext context, Point from, Point to)
+    private static void DrawWrapArrow(DrawingContext context, Point from, double nodeRightX, double rowBottomY, double nextRowY, double nextRowX, double nodeHeight)
     {
-        // Simple elbow connector to next row
-        double right = from.X + 16;
+        // 1. Right exit from current node
+        double exitX = nodeRightX + 16;
+        // 2. Channel halfway between current row bottom and next row top
+        double channelY = (rowBottomY + nextRowY) / 2;
+        // 3. Left turnaround position to the left of next row's head
+        double leftTurnX = nextRowX - 22;
+        // 4. Center of the next row's first node
+        double targetY = nextRowY + nodeHeight / 2;
+        Point targetPoint = new Point(nextRowX, targetY);
+
         var geo = new StreamGeometry();
         using (var ctx = geo.Open())
         {
             ctx.BeginFigure(from, false);
-            ctx.LineTo(new Point(right, from.Y));
-            ctx.LineTo(new Point(right, to.Y));
-            ctx.LineTo(to);
+            ctx.LineTo(new Point(exitX, from.Y));
+            ctx.LineTo(new Point(exitX, channelY));
+            ctx.LineTo(new Point(leftTurnX, channelY));
+            ctx.LineTo(new Point(leftTurnX, targetY));
+            ctx.LineTo(targetPoint);
         }
         context.DrawGeometry(null, ArrowPen, geo);
+
+        // Arrow head pointing right into the first node of the next row
+        var headGeo = new StreamGeometry();
+        using (var ctx = headGeo.Open())
+        {
+            ctx.BeginFigure(new Point(targetPoint.X - 7, targetPoint.Y - 5), true);
+            ctx.LineTo(targetPoint);
+            ctx.LineTo(new Point(targetPoint.X - 7, targetPoint.Y + 5));
+        }
+        context.DrawGeometry(ArrowBrush, ArrowPen, headGeo);
     }
 }

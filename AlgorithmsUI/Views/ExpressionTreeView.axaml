@@ -2,7 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:controls="using:AlgorithmsUI.Controls"
              x:Class="AlgorithmsUI.Views.ExpressionTreeView">
-    <Grid RowDefinitions="Auto,*" ColumnDefinitions="360,*" Margin="24,20,24,24">
+    <Grid RowDefinitions="Auto,*" ColumnDefinitions="390,*" Margin="24,20,24,24">
         <!-- Header -->
         <StackPanel Grid.ColumnSpan="2" Spacing="4" Margin="0,0,0,16">
             <TextBlock Classes="h1" Text="3 часть. Дерево выражений (Бинарное дерево)" />
@@ -21,7 +21,7 @@
                             <TextBlock Classes="hint" Text="Токены через пробел (+, -, *, /, :, ^, sqrt, sin, cos, ln)" />
                             <TextBox x:Name="PostfixInput" Text="7 8 + 3 2 + :" TextWrapping="Wrap" />
 
-                            <Button x:Name="BuildTreeBtn" Content="Построить дерево и вычислить" Classes="wide accent" ToolTip.Tip="Пробел" />
+                            <Button x:Name="BuildTreeBtn" Content="Построить и вычислить" Classes="wide accent" ToolTip.Tip="Пробел" />
 
                             <TextBlock Classes="section" Text="ШАБЛОНЫ" Margin="0,4,0,0" />
                             <Grid ColumnDefinitions="*,*" ColumnSpacing="6">

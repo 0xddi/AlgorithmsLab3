@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Threading;
 using AlgorithmsCore.Tasks;
 using AlgorithmsUI.Theme;
 
@@ -11,6 +12,9 @@ public partial class StackView : UserControl, IShortcutHandler
 {
     private readonly ObservableCollection<string> _opsLog = new();
     private readonly ObservableCollection<string> _calcLog = new();
+
+    private readonly DispatcherTimer _opsTimer = new() { Interval = TimeSpan.FromMilliseconds(900) };
+    private readonly DispatcherTimer _evalTimer = new() { Interval = TimeSpan.FromMilliseconds(900) };
 
     private List<StackOperationProcessor.OperationStep> _opSteps = new();
     private int _currentOpStep = 0;
@@ -25,14 +29,22 @@ public partial class StackView : UserControl, IShortcutHandler
         OpsLogList.ItemsSource = _opsLog;
         CalcLogList.ItemsSource = _calcLog;
 
+        _opsTimer.Tick += (_, _) => OnOpsTick();
+        _evalTimer.Tick += (_, _) => OnEvalTick();
+
         // Tabs
         TabOpsBtn.Click += (_, _) => SwitchTab(0);
         TabCalcBtn.Click += (_, _) => SwitchTab(1);
         TabBenchBtn.Click += (_, _) => SwitchTab(2);
 
         // Operations controls
-        RunAllBtn.Click += (_, _) => RunAllOperations();
-        StepBtn.Click += (_, _) => StepOperation();
+        RunAllBtn.Click += (_, _) => ToggleOpsPlay();
+        StepBtn.Click += (_, _) =>
+        {
+            _opsTimer.Stop();
+            RunAllBtn.Content = "Старт (Авто)";
+            StepOperation();
+        };
         ResetBtn.Click += (_, _) => ResetOperations();
         PresetDocBtn.Click += (_, _) => SetPreset("3 4 1,56 1,7 1,cat 2 5 4");
         PresetRandomBtn.Click += (_, _) => GenerateRandomOperations();
@@ -41,8 +53,13 @@ public partial class StackView : UserControl, IShortcutHandler
 
         // Calculator controls
         ConvertInfixBtn.Click += (_, _) => ConvertInfix();
-        EvalPostfixBtn.Click += (_, _) => EvalAllPostfix();
-        EvalStepBtn.Click += (_, _) => StepEvalPostfix();
+        EvalPostfixBtn.Click += (_, _) => ToggleEvalPlay();
+        EvalStepBtn.Click += (_, _) =>
+        {
+            _evalTimer.Stop();
+            EvalPostfixBtn.Content = "Вычислить (Авто)";
+            StepEvalPostfix();
+        };
 
         // Benchmark
         RunBenchBtn.Click += (_, _) => RunBenchmark();
@@ -52,6 +69,11 @@ public partial class StackView : UserControl, IShortcutHandler
 
     private void SwitchTab(int tabIndex)
     {
+        _opsTimer.Stop();
+        RunAllBtn.Content = "Старт (Авто)";
+        _evalTimer.Stop();
+        EvalPostfixBtn.Content = "Вычислить (Авто)";
+
         PanelOperations.IsVisible = (tabIndex == 0);
         PanelCalculator.IsVisible = (tabIndex == 1);
         PanelBenchmark.IsVisible = (tabIndex == 2);
@@ -67,7 +89,7 @@ public partial class StackView : UserControl, IShortcutHandler
         {
             switch (key)
             {
-                case Key.Space: RunAllOperations(); return true;
+                case Key.Space: ToggleOpsPlay(); return true;
                 case Key.Right: StepOperation(); return true;
                 case Key.R: ResetOperations(); return true;
             }
@@ -76,7 +98,7 @@ public partial class StackView : UserControl, IShortcutHandler
         {
             switch (key)
             {
-                case Key.Space: EvalAllPostfix(); return true;
+                case Key.Space: ToggleEvalPlay(); return true;
                 case Key.Right: StepEvalPostfix(); return true;
             }
         }
@@ -93,6 +115,8 @@ public partial class StackView : UserControl, IShortcutHandler
 
     private void ResetOperations()
     {
+        _opsTimer.Stop();
+        RunAllBtn.Content = "Старт (Авто)";
         PrepareSteps();
         _opsLog.Clear();
         VisualCanvas.Items = Array.Empty<string>();
@@ -101,6 +125,35 @@ public partial class StackView : UserControl, IShortcutHandler
         StatTopElem.Value = "—";
         StatStepProgress.Value = $"0 / {_opSteps.Count}";
         StatExecTime.Value = "—";
+    }
+
+    private void ToggleOpsPlay()
+    {
+        if (_opsTimer.IsEnabled)
+        {
+            _opsTimer.Stop();
+            RunAllBtn.Content = "Продолжить";
+            return;
+        }
+
+        if (_opSteps.Count == 0 || _currentOpStep >= _opSteps.Count)
+        {
+            ResetOperations();
+        }
+
+        _opsTimer.Start();
+        RunAllBtn.Content = "Пауза";
+        OnOpsTick();
+    }
+
+    private void OnOpsTick()
+    {
+        StepOperation();
+        if (_currentOpStep >= _opSteps.Count)
+        {
+            _opsTimer.Stop();
+            RunAllBtn.Content = "Старт (Авто)";
+        }
     }
 
     private void StepOperation()
@@ -120,30 +173,6 @@ public partial class StackView : UserControl, IShortcutHandler
         StatCurrentSize.Value = step.StackItems.Count.ToString();
         StatTopElem.Value = step.StackItems.Count > 0 ? step.StackItems[0] : "—";
         StatStepProgress.Value = $"{_currentOpStep} / {_opSteps.Count}";
-    }
-
-    private void RunAllOperations()
-    {
-        var sw = Stopwatch.StartNew();
-        PrepareSteps();
-        _opsLog.Clear();
-
-        foreach (var step in _opSteps)
-        {
-            _opsLog.Add($"[{step.StepIndex}] {step.ResultText}");
-        }
-        sw.Stop();
-
-        if (_opSteps.Count > 0)
-        {
-            var last = _opSteps.Last();
-            VisualCanvas.Items = last.StackItems;
-            VisualCanvas.StatusAction = $"Завершено ({_opSteps.Count} операций)";
-            StatCurrentSize.Value = last.StackItems.Count.ToString();
-            StatTopElem.Value = last.StackItems.Count > 0 ? last.StackItems[0] : "—";
-            StatStepProgress.Value = $"{_opSteps.Count} / {_opSteps.Count}";
-        }
-        StatExecTime.Value = TimeFormat.Format(sw.Elapsed);
     }
 
     private void SetPreset(string preset)
@@ -180,7 +209,7 @@ public partial class StackView : UserControl, IShortcutHandler
         }
         else
         {
-            _opsLog.Insert(0, "⚠ Файл input.txt не найден. Сохраните данные сперва.");
+            _opsLog.Insert(0, "⚠ Файл input.txt не найден.");
         }
     }
 
@@ -233,6 +262,36 @@ public partial class StackView : UserControl, IShortcutHandler
         }
     }
 
+    private void ToggleEvalPlay()
+    {
+        if (_evalTimer.IsEnabled)
+        {
+            _evalTimer.Stop();
+            EvalPostfixBtn.Content = "Продолжить";
+            return;
+        }
+
+        if (_evalSteps.Count == 0 || _currentEvalStep >= _evalSteps.Count)
+        {
+            PrepareEval();
+            _calcLog.Clear();
+        }
+
+        _evalTimer.Start();
+        EvalPostfixBtn.Content = "Пауза";
+        OnEvalTick();
+    }
+
+    private void OnEvalTick()
+    {
+        StepEvalPostfix();
+        if (_currentEvalStep >= _evalSteps.Count)
+        {
+            _evalTimer.Stop();
+            EvalPostfixBtn.Content = "Вычислить (Авто)";
+        }
+    }
+
     private void StepEvalPostfix()
     {
         if (_evalSteps.Count == 0 || _currentEvalStep >= _evalSteps.Count)
@@ -253,36 +312,6 @@ public partial class StackView : UserControl, IShortcutHandler
             StatCalcResult.Value = step.ProducedValue.Value.ToString("G6");
         }
     }
-
-    private void EvalAllPostfix()
-    {
-        try
-        {
-            var sw = Stopwatch.StartNew();
-            PrepareEval();
-            _calcLog.Clear();
-
-            foreach (var step in _evalSteps)
-            {
-                _calcLog.Add($"[{step.StepIndex}] Токен '{step.Token}': {step.Action}");
-            }
-            sw.Stop();
-
-            if (_evalSteps.Count > 0)
-            {
-                var last = _evalSteps.Last();
-                VisualCanvas.Items = last.StackState.Select(v => v.ToString("G6")).ToList();
-                VisualCanvas.StatusAction = $"Результат: {last.ProducedValue:G6}";
-                StatCalcResult.Value = $"{last.ProducedValue:G6}";
-                StatCalcStep.Value = $"{_evalSteps.Count} / {_evalSteps.Count}";
-            }
-            StatCalcTime.Value = TimeFormat.Format(sw.Elapsed);
-        }
-        catch (Exception ex)
-        {
-            _calcLog.Insert(0, $"Ошибка: {ex.Message}");
-        }
-    }
     #endregion
 
     #region Benchmark
@@ -298,7 +327,7 @@ public partial class StackView : UserControl, IShortcutHandler
             _ => 10000
         };
 
-        int mix = BenchMixCombo.SelectedIndex; // 0: 50/50, 1: 100% push, 2: 80/20
+        int mix = BenchMixCombo.SelectedIndex;
 
         var stack = new AlgorithmsCore.DataStructures.Stack<string>();
         var sw = Stopwatch.StartNew();

@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Threading;
 using AlgorithmsCore.DataStructures;
 using AlgorithmsCore.QueueTasks;
 using AlgorithmsUI.Theme;
@@ -11,6 +12,8 @@ namespace AlgorithmsUI.Views;
 public partial class QueueView : UserControl, IShortcutHandler
 {
     private readonly ObservableCollection<string> _opsLog = new();
+    private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromMilliseconds(900) };
+
     private List<QueueProcessor.QueueStep> _opSteps = new();
     private int _currentOpStep = 0;
 
@@ -19,12 +22,18 @@ public partial class QueueView : UserControl, IShortcutHandler
         InitializeComponent();
 
         OpsLogList.ItemsSource = _opsLog;
+        _timer.Tick += (_, _) => OnTimerTick();
 
         TabOpsBtn.Click += (_, _) => SwitchTab(0);
         TabBenchBtn.Click += (_, _) => SwitchTab(1);
 
-        RunAllBtn.Click += (_, _) => RunAllOperations();
-        StepBtn.Click += (_, _) => StepOperation();
+        RunAllBtn.Click += (_, _) => TogglePlay();
+        StepBtn.Click += (_, _) =>
+        {
+            _timer.Stop();
+            RunAllBtn.Content = "Старт (Авто)";
+            StepOperation();
+        };
         ResetBtn.Click += (_, _) => ResetOperations();
         PresetDocBtn.Click += (_, _) => SetPreset("3 4 1,56 1,7 1,cat 2 5 4");
         PresetRandomBtn.Click += (_, _) => GenerateRandomOperations();
@@ -41,6 +50,9 @@ public partial class QueueView : UserControl, IShortcutHandler
 
     private void SwitchTab(int tabIndex)
     {
+        _timer.Stop();
+        RunAllBtn.Content = "Старт (Авто)";
+
         PanelOperations.IsVisible = (tabIndex == 0);
         PanelBenchmark.IsVisible = (tabIndex == 1);
 
@@ -54,7 +66,7 @@ public partial class QueueView : UserControl, IShortcutHandler
         {
             switch (key)
             {
-                case Key.Space: RunAllOperations(); return true;
+                case Key.Space: TogglePlay(); return true;
                 case Key.Right: StepOperation(); return true;
                 case Key.R: ResetOperations(); return true;
             }
@@ -79,6 +91,8 @@ public partial class QueueView : UserControl, IShortcutHandler
 
     private void ResetOperations()
     {
+        _timer.Stop();
+        RunAllBtn.Content = "Старт (Авто)";
         PrepareSteps();
         _opsLog.Clear();
         VisualCanvas.Items = Array.Empty<string>();
@@ -88,6 +102,35 @@ public partial class QueueView : UserControl, IShortcutHandler
         StatTailElem.Value = "—";
         StatStepProgress.Value = $"0 / {_opSteps.Count}";
         StatExecTime.Value = "—";
+    }
+
+    private void TogglePlay()
+    {
+        if (_timer.IsEnabled)
+        {
+            _timer.Stop();
+            RunAllBtn.Content = "Продолжить";
+            return;
+        }
+
+        if (_opSteps.Count == 0 || _currentOpStep >= _opSteps.Count)
+        {
+            ResetOperations();
+        }
+
+        _timer.Start();
+        RunAllBtn.Content = "Пауза";
+        OnTimerTick();
+    }
+
+    private void OnTimerTick()
+    {
+        StepOperation();
+        if (_currentOpStep >= _opSteps.Count)
+        {
+            _timer.Stop();
+            RunAllBtn.Content = "Старт (Авто)";
+        }
     }
 
     private void StepOperation()
@@ -108,31 +151,6 @@ public partial class QueueView : UserControl, IShortcutHandler
         StatHeadElem.Value = step.QueueItems.Count > 0 ? step.QueueItems[0] : "—";
         StatTailElem.Value = step.QueueItems.Count > 0 ? step.QueueItems[^1] : "—";
         StatStepProgress.Value = $"{_currentOpStep} / {_opSteps.Count}";
-    }
-
-    private void RunAllOperations()
-    {
-        var sw = Stopwatch.StartNew();
-        PrepareSteps();
-        _opsLog.Clear();
-
-        foreach (var step in _opSteps)
-        {
-            _opsLog.Add($"[{step.StepIndex}] {step.ResultText}");
-        }
-        sw.Stop();
-
-        if (_opSteps.Count > 0)
-        {
-            var last = _opSteps.Last();
-            VisualCanvas.Items = last.QueueItems;
-            VisualCanvas.StatusAction = $"Завершено ({_opSteps.Count} операций)";
-            StatCurrentSize.Value = last.QueueItems.Count.ToString();
-            StatHeadElem.Value = last.QueueItems.Count > 0 ? last.QueueItems[0] : "—";
-            StatTailElem.Value = last.QueueItems.Count > 0 ? last.QueueItems[^1] : "—";
-            StatStepProgress.Value = $"{_opSteps.Count} / {_opSteps.Count}";
-        }
-        StatExecTime.Value = TimeFormat.Format(sw.Elapsed);
     }
 
     private void SetPreset(string preset)
@@ -192,7 +210,7 @@ public partial class QueueView : UserControl, IShortcutHandler
             _ => 50000
         };
 
-        int mix = BenchMixCombo.SelectedIndex; // 0: mixed 50/50, 1: 100% enqueue, 2: 85/15
+        int mix = BenchMixCombo.SelectedIndex;
 
         // Benchmark MyQueue
         var myQueue = new MyQueue<string>();

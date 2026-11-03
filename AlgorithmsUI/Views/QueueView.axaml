@@ -2,7 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:controls="using:AlgorithmsUI.Controls"
              x:Class="AlgorithmsUI.Views.QueueView">
-    <Grid RowDefinitions="Auto,*" ColumnDefinitions="360,*" Margin="24,20,24,24">
+    <Grid RowDefinitions="Auto,*" ColumnDefinitions="390,*" Margin="24,20,24,24">
         <!-- Header -->
         <StackPanel Grid.ColumnSpan="2" Spacing="4" Margin="0,0,0,16">
             <TextBlock Classes="h1" Text="2 часть. Структура данных Очередь (FIFO)" />
@@ -55,7 +55,7 @@
 
                         <Border Classes="card">
                             <StackPanel Spacing="8">
-                                <Button x:Name="RunAllBtn" Content="Выполнить всё" Classes="wide accent" ToolTip.Tip="Пробел" />
+                                <Button x:Name="RunAllBtn" Content="Старт (Авто)" Classes="wide accent" ToolTip.Tip="Пробел" />
                                 <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
                                     <Button x:Name="StepBtn" Content="Шаг вперед" Classes="wide" ToolTip.Tip="→" />
                                     <Button Grid.Column="1" x:Name="ResetBtn" Content="Сначала" Classes="wide" ToolTip.Tip="R" />
@@ -106,7 +106,7 @@
                                     <ComboBoxItem Content="Пакетный (85% Enqueue / 15% Dequeue)" />
                                 </ComboBox>
 
-                                <Button x:Name="RunCompareBtn" Content="Запустить сравнение (Замер времени)" Classes="wide accent" />
+                                <Button x:Name="RunCompareBtn" Content="Запустить сравнение" Classes="wide accent" />
                             </StackPanel>
                         </Border>
 
