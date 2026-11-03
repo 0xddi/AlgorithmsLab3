@@ -63,6 +63,32 @@ public sealed class LinkedListCanvas : Control
         InvalidateVisual();
     }
 
+    protected override Size MeasureOverride(Size availableSize)
+    {
+        double w = double.IsInfinity(availableSize.Width) ? 800 : availableSize.Width;
+        double nodeWidth = 76;
+        double arrowLength = 34;
+        double stepX = nodeWidth + arrowLength;
+        double paddingLeft = 44;
+        double rowPitch = 44 + 58;
+
+        int nodesPerRow = Math.Max(1, (int)((w - paddingLeft - 60) / stepX));
+        int count1 = _primaryList?.Count ?? 0;
+        int rows1 = Math.Max(1, (count1 + nodesPerRow - 1) / nodesPerRow);
+        double height1 = 60 + (rows1 - 1) * rowPitch + 44 + 50;
+
+        if (_secondaryList != null && _secondaryList.Count > 0)
+        {
+            int count2 = _secondaryList.Count;
+            int rows2 = Math.Max(1, (count2 + nodesPerRow - 1) / nodesPerRow);
+            double height2 = 40 + (rows2 - 1) * rowPitch + 44 + 50;
+            double totalH = height1 + height2;
+            return new Size(availableSize.Width, double.IsInfinity(availableSize.Height) ? totalH : Math.Max(availableSize.Height, totalH));
+        }
+
+        return new Size(availableSize.Width, double.IsInfinity(availableSize.Height) ? height1 : Math.Max(availableSize.Height, height1));
+    }
+
     public override void Render(DrawingContext context)
     {
         base.Render(context);
@@ -71,14 +97,44 @@ public sealed class LinkedListCanvas : Control
         double w = Bounds.Width;
         double h = Bounds.Height;
 
+        double nodeWidth = 76;
+        double arrowLength = 34;
+        double stepX = nodeWidth + arrowLength;
+        double paddingLeft = 44;
+        double rowGap = 58;
+        double rowPitch = 44 + rowGap;
+        int nodesPerRow = Math.Max(1, (int)((w - paddingLeft - 60) / stepX));
+
         if (_secondaryList != null && _secondaryList.Count > 0)
         {
-            DrawSingleList(context, _primaryList, "СПИСОК 1 (ДО РАЗДЕЛЕНИЯ):", 45, w);
-            DrawSingleList(context, _secondaryList, "СПИСОК 2 (ПОСЛЕ РАЗДЕЛЕНИЯ):", h / 2 + 30, w);
+            int rows1 = Math.Max(1, (_primaryList.Count + nodesPerRow - 1) / nodesPerRow);
+            double h1 = (rows1 - 1) * rowPitch + 44;
+            double startY1 = 45;
+            double startY2 = Math.Max(startY1 + h1 + 65, h / 2 + 20);
+
+            DrawSingleList(context, _primaryList, "СПИСОК 1 (ДО РАЗДЕЛЕНИЯ):", startY1, w);
+            DrawSingleList(context, _secondaryList, "СПИСОК 2 (ПОСЛЕ РАЗДЕЛЕНИЯ):", startY2, w);
         }
         else
         {
-            double startY = Math.Max(60, h / 2 - 60);
+            int rowCount = Math.Max(1, (_primaryList.Count + nodesPerRow - 1) / nodesPerRow);
+            double totalListHeight = (rowCount - 1) * rowPitch + 44;
+            double minCeilingY = 50;
+            double bottomMargin = string.IsNullOrEmpty(_statusAction) ? 24 : 44;
+
+            double startY;
+            if (rowCount <= 1)
+            {
+                // 1 строка: центрируем по вертикали
+                startY = Math.Max(minCeilingY, (h - totalListHeight) / 2);
+            }
+            else
+            {
+                // 2 и более строк: поднимаем вверх, пока не упрется в потолок (minCeilingY = 50)
+                double targetY = (h - totalListHeight - bottomMargin) / 2;
+                startY = Math.Max(minCeilingY, targetY);
+            }
+
             DrawSingleList(context, _primaryList, "СВЯЗНЫЙ СПИСОК (HEAD ──► TAIL):", startY, w);
         }
 

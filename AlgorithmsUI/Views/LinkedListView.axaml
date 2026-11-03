@@ -126,7 +126,9 @@
 
         <!-- Right Column: Canvas / Visualizer -->
         <Border Grid.Row="1" Grid.Column="1" Classes="canvas">
-            <controls:LinkedListCanvas x:Name="VisualCanvas" Margin="16" />
+            <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                <controls:LinkedListCanvas x:Name="VisualCanvas" Margin="16" />
+            </ScrollViewer>
         </Border>
     </Grid>
 </UserControl>
