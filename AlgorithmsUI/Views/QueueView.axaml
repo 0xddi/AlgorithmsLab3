@@ -100,10 +100,10 @@
                                 </ComboBox>
 
                                 <TextBlock Classes="label" Text="Состав операций (разный состав)" />
-                                <ComboBox x:Name="BenchMixCombo" SelectedIndex="1">
-                                    <ComboBoxItem Content="Смешанный (50% Enqueue / 50% Dequeue)" />
-                                    <ComboBoxItem Content="Только вставки (100% Enqueue — макс. расхождение)" />
-                                    <ComboBoxItem Content="Пакетный (85% Enqueue / 15% Dequeue)" />
+                                <ComboBox x:Name="BenchMixCombo" SelectedIndex="0">
+                                    <ComboBoxItem Content="Смешанный (50% вставки / 50% извлечения)" />
+                                    <ComboBoxItem Content="Только вставки (100% — максимальное расхождение)" />
+                                    <ComboBoxItem Content="Пакетный (85% вставки / 15% извлечения)" />
                                 </ComboBox>
 
                                 <Button x:Name="RunCompareBtn" Content="Запустить сравнение" Classes="wide accent" />
@@ -136,7 +136,10 @@
 
         <!-- Right Column: Canvas / Visualizer -->
         <Border Grid.Row="1" Grid.Column="1" Classes="canvas">
-            <controls:QueueCanvas x:Name="VisualCanvas" Margin="16" />
+            <Panel>
+                <controls:QueueCanvas x:Name="VisualCanvas" Margin="16" />
+                <controls:QueueBenchmarkCanvas x:Name="BenchCanvas" Margin="16" IsVisible="False" />
+            </Panel>
         </Border>
     </Grid>
 </UserControl>
