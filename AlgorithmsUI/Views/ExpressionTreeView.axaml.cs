@@ -56,7 +56,11 @@ public partial class ExpressionTreeView : UserControl, IShortcutHandler
             string post = tree.Postfix();
             sw.Stop();
 
-            VisualCanvas.Tree = tree;
+            // The canvas replays the postfix construction token by token; building the tree above already
+            // validated the expression, so this normally always succeeds.
+            var tokens = postfix.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (!VisualCanvas.PlayBuild(tokens))
+                VisualCanvas.Tree = tree;
 
             StatResult.Value = $"{result:G8}";
             InfixResult.Text = infix;
