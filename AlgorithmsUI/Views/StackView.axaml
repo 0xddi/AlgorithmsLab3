@@ -110,7 +110,7 @@
                         </Border>
 
                         <Border Classes="card" Padding="0">
-                            <DockPanel MinHeight="140" MaxHeight="220">
+                            <DockPanel MinHeight="140" MaxHeight="280">
                                 <TextBlock DockPanel.Dock="Top" Classes="section" Text="ХОД ВЫЧИСЛЕНИЙ" Margin="16,12,16,4" />
                                 <ListBox x:Name="CalcLogList" Classes="log" Background="Transparent" />
                             </DockPanel>
