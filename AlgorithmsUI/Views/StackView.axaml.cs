@@ -15,6 +15,9 @@ public partial class StackView : UserControl, IShortcutHandler
 
     private readonly DispatcherTimer _opsTimer = new() { Interval = TimeSpan.FromMilliseconds(900) };
     private readonly DispatcherTimer _evalTimer = new() { Interval = TimeSpan.FromMilliseconds(900) };
+    private readonly DispatcherTimer _benchTimer = new() { Interval = TimeSpan.FromMilliseconds(16) };
+    private readonly Stopwatch _benchClock = new();
+    private readonly List<int> _benchStack = new();
 
     private List<StackOperationProcessor.OperationStep> _opSteps = new();
     private int _currentOpStep = 0;
@@ -22,6 +25,22 @@ public partial class StackView : UserControl, IShortcutHandler
     private List<PostfixEvaluator.EvalStep> _evalSteps = new();
     private int _currentEvalStep = 0;
     private CancellationTokenSource? _tabTransition;
+
+    // Benchmark replay state: the measurement itself is instant, this only drives the visual replay.
+    private int _benchTotal;
+    private int _benchMixIndex;
+    private int _benchNextIndex;
+    private int _benchProcessed;
+    private int _benchPushes;
+    private int _benchPops;
+    private int _benchSize;
+    private double _benchDuration;
+    private double _benchDisplayAccumulator;
+    private double _benchLastTime;
+    private int _benchLastValue;
+    private bool _benchLastWasPush;
+    private bool _benchRunning;
+    private TimeSpan _benchMeasured;
 
     public StackView()
     {
@@ -32,6 +51,7 @@ public partial class StackView : UserControl, IShortcutHandler
 
         _opsTimer.Tick += (_, _) => OnOpsTick();
         _evalTimer.Tick += (_, _) => OnEvalTick();
+        _benchTimer.Tick += (_, _) => OnBenchTick();
 
         // Tabs
         TabOpsBtn.Click += (_, _) => SwitchTab(0);
@@ -78,6 +98,18 @@ public partial class StackView : UserControl, IShortcutHandler
         TabOpsBtn.Classes.Set("accent", tabIndex == 0);
         TabCalcBtn.Classes.Set("accent", tabIndex == 1);
         TabBenchBtn.Classes.Set("accent", tabIndex == 2);
+
+        bool benchmark = tabIndex == 2;
+        if (benchmark != BenchCanvas.IsVisible)
+        {
+            BenchCanvas.IsVisible = benchmark;
+            VisualCanvas.IsVisible = !benchmark;
+
+            // Leaving the tab finishes the replay immediately: the measurement is already done, so the
+            // result rows must not stay at "…".
+            if (!benchmark)
+                FinishBenchmarkReplay();
+        }
 
         var panels = new[] { PanelOperations, PanelCalculator, PanelBenchmark };
         var target = panels[tabIndex];
@@ -359,6 +391,7 @@ public partial class StackView : UserControl, IShortcutHandler
 
         int mix = BenchMixCombo.SelectedIndex;
 
+        // The measurement runs in one tight loop: animation overhead must not distort the numbers.
         var stack = new AlgorithmsCore.DataStructures.Stack<string>();
         var sw = Stopwatch.StartNew();
 
@@ -379,15 +412,147 @@ public partial class StackView : UserControl, IShortcutHandler
 
         sw.Stop();
 
-        StatBenchOps.Value = $"{count:N0}";
-        StatBenchTime.Value = TimeFormat.Format(sw.Elapsed);
-        double opsPerSec = sw.Elapsed.TotalSeconds > 0 ? count / sw.Elapsed.TotalSeconds : 0;
-        StatBenchSpeed.Value = $"{opsPerSec:N0} оп/сек";
-        double avgMicros = (sw.Elapsed.TotalMicroseconds) / count;
+        _benchTimer.Stop();
+        _benchRunning = false;
+
+        _benchTotal = count;
+        _benchMixIndex = mix;
+        _benchNextIndex = 0;
+        _benchProcessed = 0;
+        _benchPushes = 0;
+        _benchPops = 0;
+        _benchSize = 0;
+        _benchStack.Clear();
+        _benchDisplayAccumulator = 0;
+        _benchLastTime = 0;
+        _benchLastValue = 0;
+        _benchLastWasPush = false;
+        _benchMeasured = sw.Elapsed;
+
+        // A fixed, brisk replay: enough to see pushes and pops, short enough for 500 000 operations.
+        _benchDuration = count switch
+        {
+            <= 1_000 => 2.2,
+            <= 10_000 => 3.2,
+            <= 50_000 => 3.6,
+            <= 100_000 => 3.8,
+            _ => 4.2
+        };
+
+        StatBenchOps.Value = $"0 / {count:N0}";
+        StatBenchTime.Value = "…";
+        StatBenchSpeed.Value = "…";
+        StatBenchAvg.Value = "…";
+
+        BenchCanvas.Begin(count, MixLabel(mix));
+
+        _benchClock.Restart();
+        _benchRunning = true;
+        _benchTimer.Start();
+    }
+
+    private void OnBenchTick()
+    {
+        if (!_benchRunning)
+            return;
+
+        double now = _benchClock.Elapsed.TotalSeconds;
+        double delta = Math.Max(0, now - _benchLastTime);
+        _benchLastTime = now;
+
+        double progress = Math.Clamp(now / _benchDuration, 0, 1);
+        int target = (int)Math.Round(_benchTotal * progress);
+
+        while (_benchProcessed < target)
+            ApplyBenchOperation();
+
+        BenchCanvas.UpdateCounters(_benchProcessed, _benchPushes, _benchPops);
+        StatBenchOps.Value = $"{_benchProcessed:N0} / {_benchTotal:N0}";
+
+        // Update the stack picture and the operation stream a few times per second: fast enough to feel
+        // live, slow enough that each push/pop can be seen instead of blurring into one frame.
+        _benchDisplayAccumulator += delta;
+        if (_benchDisplayAccumulator >= 0.09 || progress >= 1)
+        {
+            _benchDisplayAccumulator = 0;
+            BenchCanvas.ShowStack(_benchSize, TopItems());
+            BenchCanvas.AddSample(
+                _benchLastWasPush,
+                _benchLastWasPush ? $"push item_{_benchLastValue}" : $"pop item_{_benchLastValue}");
+        }
+
+        if (progress >= 1)
+            FinishBenchmarkReplay();
+    }
+
+    private void ApplyBenchOperation()
+    {
+        int index = _benchNextIndex++;
+        bool isPush = _benchMixIndex switch
+        {
+            1 => true,
+            2 => (index % 5 != 0),
+            _ => (index % 2 == 0)
+        };
+
+        if (isPush || _benchSize == 0)
+        {
+            _benchStack.Insert(0, index);
+            if (_benchStack.Count > 60)
+                _benchStack.RemoveAt(60);
+
+            _benchSize++;
+            _benchPushes++;
+            _benchLastWasPush = true;
+            _benchLastValue = index;
+        }
+        else
+        {
+            _benchLastValue = _benchStack.Count > 0 ? _benchStack[0] : 0;
+            if (_benchStack.Count > 0)
+                _benchStack.RemoveAt(0);
+
+            _benchSize = Math.Max(0, _benchSize - 1);
+            _benchPops++;
+            _benchLastWasPush = false;
+        }
+
+        _benchProcessed++;
+    }
+
+    private List<string> TopItems() =>
+        _benchStack.Take(12).Select(value => $"item_{value}").ToList();
+
+    private void FinishBenchmarkReplay()
+    {
+        if (!_benchRunning)
+            return;
+
+        _benchRunning = false;
+        _benchTimer.Stop();
+
+        while (_benchProcessed < _benchTotal)
+            ApplyBenchOperation();
+
+        BenchCanvas.UpdateCounters(_benchTotal, _benchPushes, _benchPops);
+        BenchCanvas.ShowStack(_benchSize, TopItems());
+        BenchCanvas.Complete($"{_benchTotal:N0} операций за {TimeFormat.Format(_benchMeasured)}");
+
+        StatBenchOps.Value = $"{_benchTotal:N0}";
+        StatBenchTime.Value = TimeFormat.Format(_benchMeasured);
+
+        double seconds = _benchMeasured.TotalSeconds;
+        StatBenchSpeed.Value = seconds > 0 ? $"{_benchTotal / seconds:N0} оп/сек" : "—";
+        double avgMicros = _benchMeasured.TotalMicroseconds / Math.Max(1, _benchTotal);
         StatBenchAvg.Value = $"{avgMicros:F3} мкс / оп (O(1))";
 
-        VisualCanvas.Items = stack.ToList().Take(15).ToList();
-        VisualCanvas.StatusAction = $"Тест {count:N0} операций завершён за {sw.ElapsedMilliseconds} мс";
     }
+
+    private static string MixLabel(int mix) => mix switch
+    {
+        1 => "100% Push",
+        2 => "80% Push / 20% Pop",
+        _ => "50% Push / 50% Pop"
+    };
     #endregion
 }
