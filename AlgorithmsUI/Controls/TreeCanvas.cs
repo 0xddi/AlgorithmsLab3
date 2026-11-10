@@ -50,6 +50,7 @@ public sealed class TreeCanvas : AnimatedControl
     private double _overlayOpacity;
     private bool _building;
     private bool _fading;
+    private bool _paused;
     private ExpressionTree.Node? _newest;
 
     public ExpressionTree? Tree
@@ -69,7 +70,7 @@ public sealed class TreeCanvas : AnimatedControl
     /// Replays the postfix construction: each token updates the stack of subtrees and creates one node.
     /// Returns <c>false</c> when the token sequence is not a valid postfix expression.
     /// </summary>
-    public bool PlayBuild(IReadOnlyList<string> tokens)
+    public bool PlayBuild(IReadOnlyList<string> tokens, bool auto = true)
     {
         _steps.Clear();
         _visible.Clear();
@@ -79,6 +80,7 @@ public sealed class TreeCanvas : AnimatedControl
         _postTimer = 0;
         _overlayOpacity = 0;
         _fading = false;
+        _paused = !auto;
         _reveal = 1;
         _tree = null;
         _root = null;
@@ -150,6 +152,7 @@ public sealed class TreeCanvas : AnimatedControl
         _visible.Clear();
         _building = false;
         _fading = false;
+        _paused = false;
         _newest = null;
         _stepIndex = -1;
         _overlayOpacity = 0;
@@ -161,6 +164,30 @@ public sealed class TreeCanvas : AnimatedControl
         _stepTimer = 0;
         _newest = _steps[index].Created;
         _visible.Add(_newest);
+    }
+
+    /// <summary>
+    /// Advances exactly one token when the build is waiting for the user. Returns <c>false</c> when there is
+    /// nothing to advance (no build, or the last token is already shown).
+    /// </summary>
+    public bool StepBuild()
+    {
+        if (_building is false || _fading || _stepIndex < 0 || _stepIndex >= _steps.Count - 1)
+            return false;
+
+        _paused = true;
+        BeginStep(_stepIndex + 1);
+        _overlayOpacity = 1;
+
+        if (_stepIndex == _steps.Count - 1)
+        {
+            // The last token is in place: let the "root" announcement and the fade play out on their own.
+            _paused = false;
+            _postTimer = 0;
+        }
+
+        RequestAnimation();
+        return true;
     }
 
     protected override bool OnAdvance(double deltaSeconds)
@@ -181,6 +208,13 @@ public sealed class TreeCanvas : AnimatedControl
             }
 
             _overlayOpacity = Math.Min(1, _overlayOpacity + deltaSeconds / 0.18);
+
+            if (_paused)
+            {
+                // Manual mode: finish the pop/edge animation of the current step, then wait for the next click.
+                _stepTimer += deltaSeconds;
+                return _stepTimer < 0.6 || _overlayOpacity < 1;
+            }
 
             if (_stepIndex < _steps.Count - 1)
             {

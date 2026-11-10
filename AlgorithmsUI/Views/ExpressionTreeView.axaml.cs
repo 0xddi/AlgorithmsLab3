@@ -18,6 +18,7 @@ public partial class ExpressionTreeView : UserControl, IShortcutHandler
         TreeLogList.ItemsSource = _log;
 
         BuildTreeBtn.Click += (_, _) => BuildAndEvaluate();
+        BuildStepBtn.Click += (_, _) => StepBuild();
         PresetDocBtn.Click += (_, _) => SetPreset("7 8 + 3 2 + :");
         PresetComplexBtn.Click += (_, _) => SetPreset("3 4 2 * 1 5 - 2 3 ^ ^ / +");
         PresetFuncBtn.Click += (_, _) => SetPreset("16 sqrt 2 ^ 3 +");
@@ -32,7 +33,24 @@ public partial class ExpressionTreeView : UserControl, IShortcutHandler
             BuildAndEvaluate();
             return true;
         }
+
+        if (key == Key.Right)
+        {
+            StepBuild();
+            return true;
+        }
+
         return false;
+    }
+
+    /// <summary>
+    /// "Шаг" advances the build by one token. With no build in progress (or after it has finished) it starts
+    /// a paused step-by-step build of the current expression.
+    /// </summary>
+    private void StepBuild()
+    {
+        if (!VisualCanvas.StepBuild())
+            BuildAndEvaluate(auto: false);
     }
 
     private void SetPreset(string postfix)
@@ -41,7 +59,7 @@ public partial class ExpressionTreeView : UserControl, IShortcutHandler
         BuildAndEvaluate();
     }
 
-    private void BuildAndEvaluate()
+    private void BuildAndEvaluate(bool auto = true)
     {
         string postfix = PostfixInput.Text?.Trim() ?? "";
         if (string.IsNullOrEmpty(postfix)) return;
@@ -59,7 +77,7 @@ public partial class ExpressionTreeView : UserControl, IShortcutHandler
             // The canvas replays the postfix construction token by token; building the tree above already
             // validated the expression, so this normally always succeeds.
             var tokens = postfix.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            if (!VisualCanvas.PlayBuild(tokens))
+            if (!VisualCanvas.PlayBuild(tokens, auto))
                 VisualCanvas.Tree = tree;
 
             StatResult.Value = $"{result:G8}";

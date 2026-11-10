@@ -21,7 +21,11 @@
                             <TextBlock Classes="hint" Text="Токены через пробел (+, -, *, /, :, ^, sqrt, sin, cos, ln)" />
                             <TextBox x:Name="PostfixInput" Text="7 8 + 3 2 + :" TextWrapping="Wrap" />
 
-                            <Button x:Name="BuildTreeBtn" Content="Построить и вычислить" Classes="wide accent" ToolTip.Tip="Пробел" />
+                            <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                                <Button x:Name="BuildTreeBtn" Content="Построить и вычислить" Classes="wide accent" ToolTip.Tip="Пробел" />
+                                <Button Grid.Column="1" x:Name="BuildStepBtn" Content="Шаг →" Classes="wide" ToolTip.Tip="→" />
+                            </Grid>
+                            <TextBlock Classes="hint" Text="«Шаг» строит дерево по одному токену: удобно разбирать алгоритм вручную." />
 
                             <TextBlock Classes="section" Text="ШАБЛОНЫ" Margin="0,4,0,0" />
                             <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
