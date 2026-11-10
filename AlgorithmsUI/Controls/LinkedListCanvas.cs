@@ -231,7 +231,7 @@ public sealed class LinkedListCanvas : AnimatedControl
             LayoutNodes(_secondary, primaryStartY, nodesPerRow, stepX, paddingLeft, rowPitch, nodeWidth);
         }
 
-        DrawList(context, _primary, split ? "СПИСОК 1 (ДО РАЗДЕЛЕНИЯ):" : "СВЯЗНЫЙ СПИСОК (HEAD ──► TAIL):",
+        DrawList(context, _primary, split ? "СПИСОК 1 (ДО РАЗДЕЛЕНИЯ):" : "СВЯЗНЫЙ СПИСОК (ГОЛОВА ──► ХВОСТ):",
             primaryStartY, nodeWidth, nodeHeight, isSecondary: false);
 
         if (split)
@@ -431,7 +431,7 @@ public sealed class LinkedListCanvas : AnimatedControl
             if (isHead)
             {
                 var headTag = new FormattedText(
-                    "HEAD",
+                    "ГОЛОВА",
                     CultureInfo.CurrentCulture,
                     FlowDirection.LeftToRight,
                     new Typeface("Inter, Segoe UI", FontStyle.Normal, FontWeight.Bold),
@@ -443,7 +443,7 @@ public sealed class LinkedListCanvas : AnimatedControl
             if (isTail)
             {
                 var tailTag = new FormattedText(
-                    "TAIL",
+                    "ХВОСТ",
                     CultureInfo.CurrentCulture,
                     FlowDirection.LeftToRight,
                     new Typeface("Inter, Segoe UI", FontStyle.Normal, FontWeight.Bold),

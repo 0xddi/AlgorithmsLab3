@@ -133,7 +133,7 @@ public sealed class QueueCanvas : AnimatedControl
         context.DrawLine(TubePen, new Point(tubeLeft, tubeBottom), new Point(tubeRight, tubeBottom));
 
         var headLabel = new FormattedText(
-            "◄── DEQUEUE (ГОЛОВА)",
+            "◄── ИЗВЛЕЧЕНИЕ (ГОЛОВА)",
             CultureInfo.CurrentCulture,
             FlowDirection.LeftToRight,
             new Typeface("Inter, Segoe UI", FontStyle.Normal, FontWeight.SemiBold),
@@ -219,7 +219,7 @@ public sealed class QueueCanvas : AnimatedControl
                     itemY + (itemHeight - valueText.Height) / 2));
 
                 var tag = new FormattedText(
-                    isHead ? "HEAD" : isTail ? "TAIL" : $"#{visual.TargetSlot}",
+                    isHead ? "ГОЛОВА" : isTail ? "ХВОСТ" : $"#{visual.TargetSlot}",
                     CultureInfo.CurrentCulture,
                     FlowDirection.LeftToRight,
                     new Typeface("Inter, Segoe UI", FontStyle.Normal, FontWeight.SemiBold),

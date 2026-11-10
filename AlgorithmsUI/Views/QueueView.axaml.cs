@@ -13,10 +13,34 @@ public partial class QueueView : UserControl, IShortcutHandler
 {
     private readonly ObservableCollection<string> _opsLog = new();
     private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromMilliseconds(900) };
+    private readonly DispatcherTimer _benchTimer = new() { Interval = TimeSpan.FromMilliseconds(16) };
+    private readonly Stopwatch _benchClock = new();
+    private readonly List<string> _benchWindow = new();
+    private readonly Queue<int> _benchValues = new();
 
     private List<QueueProcessor.QueueStep> _opSteps = new();
     private int _currentOpStep = 0;
     private CancellationTokenSource? _tabTransition;
+
+    // Benchmark replay state: the two measurements are instant, this only drives the visual replay.
+    private int _benchTotal;
+    private int _benchMixIndex;
+    private int _benchNextIndex;
+    private int _benchProcessed;
+    private int _benchEnqueues;
+    private int _benchDequeues;
+    private int _benchSize;
+    private double _benchDuration;
+    private double _benchSampleAccumulator;
+    private double _benchWindowAccumulator;
+    private double _benchLastTime;
+    private int _benchSliceEnqueueValue;
+    private int _benchSliceDequeueValue;
+    private bool _benchSliceHadEnqueue;
+    private bool _benchSliceHadDequeue;
+    private bool _benchRunning;
+    private TimeSpan _benchMyElapsed;
+    private TimeSpan _benchStdElapsed;
 
     public QueueView()
     {
@@ -24,6 +48,7 @@ public partial class QueueView : UserControl, IShortcutHandler
 
         OpsLogList.ItemsSource = _opsLog;
         _timer.Tick += (_, _) => OnTimerTick();
+        _benchTimer.Tick += (_, _) => OnBenchTick();
 
         TabOpsBtn.Click += (_, _) => SwitchTab(0);
         TabBenchBtn.Click += (_, _) => SwitchTab(1);
@@ -56,6 +81,18 @@ public partial class QueueView : UserControl, IShortcutHandler
 
         TabOpsBtn.Classes.Set("accent", tabIndex == 0);
         TabBenchBtn.Classes.Set("accent", tabIndex == 1);
+
+        bool benchmark = tabIndex == 1;
+        if (benchmark != BenchCanvas.IsVisible)
+        {
+            BenchCanvas.IsVisible = benchmark;
+            VisualCanvas.IsVisible = !benchmark;
+
+            // Leaving the tab finishes the replay immediately: the measurements are already done, so the
+            // result rows must not stay at "…".
+            if (!benchmark)
+                FinishBenchmarkReplay();
+        }
 
         var panels = new[] { PanelOperations, PanelBenchmark };
         var target = panels[tabIndex];
@@ -243,7 +280,7 @@ public partial class QueueView : UserControl, IShortcutHandler
 
         int mix = BenchMixCombo.SelectedIndex;
 
-        // Benchmark MyQueue
+        // The measurements run in tight loops: no animation overhead may distort the timings.
         var myQueue = new MyQueue<string>();
         var swMy = Stopwatch.StartNew();
         for (int i = 0; i < count; i++)
@@ -262,7 +299,6 @@ public partial class QueueView : UserControl, IShortcutHandler
         }
         swMy.Stop();
 
-        // Benchmark StandardQueue
         var stdQueue = new StandardQueue<string>();
         var swStd = Stopwatch.StartNew();
         for (int i = 0; i < count; i++)
@@ -281,17 +317,168 @@ public partial class QueueView : UserControl, IShortcutHandler
         }
         swStd.Stop();
 
-        long myMs = swMy.ElapsedMilliseconds;
-        long stdMs = swStd.ElapsedMilliseconds;
-        double ratio = stdMs > 0 ? (double)myMs / stdMs : 1.0;
+        _benchTimer.Stop();
+        _benchRunning = false;
 
-        StatBenchOps.Value = $"{count:N0}";
-        StatMyQueueTime.Value = $"{myMs} мс ({TimeFormat.Format(swMy.Elapsed)})";
-        StatStdQueueTime.Value = $"{stdMs} мс ({TimeFormat.Format(swStd.Elapsed)})";
-        StatDifference.Value = $"Δ = {Math.Abs(myMs - stdMs)} мс";
-        StatRatio.Value = ratio >= 1.0 ? $"StandardQueue быстрее в {ratio:F1}x" : $"MyQueue быстрее в {(1.0 / ratio):F1}x";
+        _benchTotal = count;
+        _benchMixIndex = mix;
+        _benchNextIndex = 0;
+        _benchProcessed = 0;
+        _benchEnqueues = 0;
+        _benchDequeues = 0;
+        _benchSize = 0;
+        _benchWindow.Clear();
+        _benchValues.Clear();
+        _benchSampleAccumulator = 0;
+        _benchWindowAccumulator = 0;
+        _benchLastTime = 0;
+        _benchSliceEnqueueValue = 0;
+        _benchSliceDequeueValue = 0;
+        _benchSliceHadEnqueue = false;
+        _benchSliceHadDequeue = false;
+        _benchMyElapsed = swMy.Elapsed;
+        _benchStdElapsed = swStd.Elapsed;
 
-        VisualCanvas.Items = myQueue.ToList().Take(12).ToList();
-        VisualCanvas.StatusAction = $"Сравнение завершено: MyQueue = {myMs} мс vs StandardQueue = {stdMs} мс";
+        _benchDuration = count switch
+        {
+            <= 10_000 => 2.4,
+            <= 50_000 => 3.2,
+            <= 100_000 => 3.6,
+            <= 250_000 => 3.9,
+            _ => 4.2
+        };
+
+        StatBenchOps.Value = $"0 / {count:N0}";
+        StatMyQueueTime.Value = "…";
+        StatStdQueueTime.Value = "…";
+        StatDifference.Value = "…";
+        StatRatio.Value = "…";
+
+        BenchCanvas.Begin(count, MixLabel(mix));
+
+        _benchClock.Restart();
+        _benchRunning = true;
+        _benchTimer.Start();
     }
+
+    private void OnBenchTick()
+    {
+        if (!_benchRunning)
+            return;
+
+        double now = _benchClock.Elapsed.TotalSeconds;
+        double delta = Math.Max(0, now - _benchLastTime);
+        _benchLastTime = now;
+
+        double progress = Math.Clamp(now / _benchDuration, 0, 1);
+        int target = (int)Math.Round(_benchTotal * progress);
+
+        while (_benchProcessed < target)
+            ApplyBenchOperation();
+
+        BenchCanvas.UpdateCounters(_benchProcessed, _benchEnqueues, _benchDequeues, _benchSize);
+        StatBenchOps.Value = $"{_benchProcessed:N0} / {_benchTotal:N0}";
+
+        _benchWindowAccumulator += delta;
+        if (_benchWindowAccumulator >= 0.22 || progress >= 1)
+        {
+            _benchWindowAccumulator = 0;
+            BenchCanvas.ShowWindow(_benchWindow, _benchSize > _benchWindow.Count);
+        }
+
+        _benchSampleAccumulator += delta;
+        if (_benchSampleAccumulator >= 0.09 || progress >= 1)
+        {
+            _benchSampleAccumulator = 0;
+
+            if (_benchSliceHadEnqueue)
+                BenchCanvas.AddSample(true, $"вставка item_{_benchSliceEnqueueValue}");
+
+            if (_benchSliceHadDequeue)
+                BenchCanvas.AddSample(false, $"извлечение item_{_benchSliceDequeueValue}");
+
+            _benchSliceHadEnqueue = false;
+            _benchSliceHadDequeue = false;
+        }
+
+        if (progress >= 1)
+            FinishBenchmarkReplay();
+    }
+
+    private void ApplyBenchOperation()
+    {
+        int index = _benchNextIndex++;
+        bool isEnqueue = _benchMixIndex switch
+        {
+            1 => true,
+            2 => (index % 7 != 0),
+            _ => (index % 2 == 0)
+        };
+
+        if (isEnqueue || _benchSize == 0)
+        {
+            _benchSize++;
+            _benchEnqueues++;
+            _benchSliceHadEnqueue = true;
+            _benchSliceEnqueueValue = index;
+
+            // The drawing shows the tail of the queue: newest items stay visible while the head is far away.
+            _benchWindow.Add($"item_{index}");
+            while (_benchWindow.Count > 6)
+                _benchWindow.RemoveAt(0);
+        }
+        else
+        {
+            _benchSize = Math.Max(0, _benchSize - 1);
+            _benchDequeues++;
+            _benchSliceHadDequeue = true;
+            _benchSliceDequeueValue = _benchNextIndex - 1 - _benchDequeues;
+
+            // Remove the visible head only while the shown window still contains it.
+            if (_benchSize < _benchWindow.Count && _benchWindow.Count > 0)
+                _benchWindow.RemoveAt(0);
+        }
+
+        _benchProcessed++;
+    }
+
+    private void FinishBenchmarkReplay()
+    {
+        if (!_benchRunning)
+            return;
+
+        _benchRunning = false;
+        _benchTimer.Stop();
+
+        while (_benchProcessed < _benchTotal)
+            ApplyBenchOperation();
+
+        BenchCanvas.UpdateCounters(_benchTotal, _benchEnqueues, _benchDequeues, _benchSize);
+        BenchCanvas.ShowWindow(_benchWindow, _benchSize > _benchWindow.Count);
+
+        // Compare real elapsed values instead of rounded milliseconds: at tens of thousands of operations
+        // the difference often lives below one millisecond, and rounding made the verdict contradict the
+        // highlighted time badges on the canvas.
+        double myMs = _benchMyElapsed.TotalMilliseconds;
+        double stdMs = _benchStdElapsed.TotalMilliseconds;
+        double ratio = stdMs > 0 ? myMs / stdMs : 1.0;
+        string verdict = ratio >= 1.0
+            ? $"StandardQueue быстрее в {ratio:F1}x"
+            : $"MyQueue быстрее в {(1.0 / ratio):F1}x";
+
+        BenchCanvas.Complete(_benchMyElapsed, _benchStdElapsed, verdict);
+
+        StatBenchOps.Value = $"{_benchTotal:N0}";
+        StatMyQueueTime.Value = TimeFormat.Format(_benchMyElapsed);
+        StatStdQueueTime.Value = TimeFormat.Format(_benchStdElapsed);
+        StatDifference.Value = $"Δ = {Math.Abs(myMs - stdMs):F2} мс";
+        StatRatio.Value = verdict;
+    }
+
+    private static string MixLabel(int mix) => mix switch
+    {
+        1 => "100% вставки",
+        2 => "85% вставки / 15% извлечения",
+        _ => "50% вставки / 50% извлечения"
+    };
 }

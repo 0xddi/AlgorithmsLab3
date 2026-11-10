@@ -60,7 +60,7 @@
                             <StackPanel Spacing="8">
                                 <TextBlock Classes="section" Text="ПОКАЗАТЕЛИ" />
                                 <controls:StatRow x:Name="StatCurrentSize" Label="Элементов в стеке" Value="0" />
-                                <controls:StatRow x:Name="StatTopElem" Label="Вершина (Top)" Value="—" />
+                                <controls:StatRow x:Name="StatTopElem" Label="Вершина" Value="—" />
                                 <controls:StatRow x:Name="StatStepProgress" Label="Текущий шаг" Value="0 / 0" />
                                 <controls:StatRow x:Name="StatExecTime" Label="Время выполнения" Value="—" />
                                 <controls:StatRow x:Name="StatComplexity" Label="Теоретическая сложность" Value="O(1)" />
