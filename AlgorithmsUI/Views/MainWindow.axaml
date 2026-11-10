@@ -21,7 +21,7 @@
                 <!-- Keyboard shortcuts -->
                 <StackPanel DockPanel.Dock="Bottom" Margin="8,16,8,0" Spacing="8">
                     <TextBlock Text="ГОРЯЧИЕ КЛАВИШИ" Classes="section" />
-                    <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="10"
+                    <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="10"
                           RowSpacing="6">
                         <Border Classes="kbd"><TextBlock Text="Пробел" /></Border>
                         <TextBlock Grid.Column="1" Text="выполнить всё" Classes="hint" VerticalAlignment="Center" />
@@ -31,6 +31,10 @@
                         <TextBlock Grid.Row="2" Grid.Column="1" Text="сброс / заново" Classes="hint" VerticalAlignment="Center" />
                         <Border Grid.Row="3" Classes="kbd"><TextBlock Text="N" /></Border>
                         <TextBlock Grid.Row="3" Grid.Column="1" Text="случайные данные" Classes="hint" VerticalAlignment="Center" />
+                        <Border Grid.Row="4" Classes="kbd"><TextBlock Text="Ctrl+Z" /></Border>
+                        <TextBlock Grid.Row="4" Grid.Column="1" Text="отменить (Undo)" Classes="hint" VerticalAlignment="Center" />
+                        <Border Grid.Row="5" Classes="kbd"><TextBlock Text="Ctrl+Y" /></Border>
+                        <TextBlock Grid.Row="5" Grid.Column="1" Text="повторить (Redo)" Classes="hint" VerticalAlignment="Center" />
                     </Grid>
                 </StackPanel>
 
@@ -79,7 +83,7 @@
         <!-- Main Pages Carousel -->
         <Carousel Grid.Column="1" x:Name="Pages" SelectedIndex="{Binding #Nav.SelectedIndex}">
             <Carousel.PageTransition>
-                <CrossFade Duration="0:0:0.15" />
+                <views:SmoothPageTransition Duration="0:0:0.32" Offset="26" />
             </Carousel.PageTransition>
             <views:StackView />
             <views:QueueView />

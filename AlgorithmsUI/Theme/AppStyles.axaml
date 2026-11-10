@@ -84,6 +84,21 @@
         <Setter Property="Padding" Value="8,5" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
+        <!-- Colour changes ease in instead of flashing, so hover and pressed states feel alive. -->
+        <Setter Property="Transitions">
+            <Transitions>
+                <BrushTransition Property="Background" Duration="0:0:0.16" />
+                <BrushTransition Property="BorderBrush" Duration="0:0:0.16" />
+                <BrushTransition Property="Foreground" Duration="0:0:0.16" />
+                <DoubleTransition Property="Opacity" Duration="0:0:0.16" />
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="Button:pointerover">
+        <Setter Property="Opacity" Value="0.92" />
+    </Style>
+    <Style Selector="Button:pressed">
+        <Setter Property="Opacity" Value="0.8" />
     </Style>
     <Style Selector="Button TextBlock">
         <Setter Property="TextWrapping" Value="Wrap" />
@@ -118,6 +133,14 @@
         <Setter Property="Margin" Value="0,2" />
         <Setter Property="CornerRadius" Value="8" />
         <Setter Property="Foreground" Value="{DynamicResource MutedForegroundBrush}" />
+    </Style>
+    <Style Selector="ListBox.nav ListBoxItem /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Transitions">
+            <Transitions>
+                <BrushTransition Property="Background" Duration="0:0:0.2" />
+                <BrushTransition Property="Foreground" Duration="0:0:0.2" />
+            </Transitions>
+        </Setter>
     </Style>
     <Style Selector="ListBox.nav ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
         <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />

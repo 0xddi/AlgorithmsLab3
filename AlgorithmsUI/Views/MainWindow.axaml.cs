@@ -15,7 +15,29 @@ public partial class MainWindow : Window
 
     private void OnShortcutKeyDown(object? sender, KeyEventArgs e)
     {
-        if (e.KeyModifiers != KeyModifiers.None || FocusManager?.GetFocusedElement() is TextBox)
+        // A focused text box keeps its own editing shortcuts (including Ctrl+Z inside the box).
+        if (FocusManager?.GetFocusedElement() is TextBox)
+            return;
+
+        if (e.KeyModifiers == KeyModifiers.Control)
+        {
+            if (Pages.SelectedItem is ApplicationsView applications)
+            {
+                bool handled = e.Key switch
+                {
+                    Key.Z => applications.HandleEditorUndo(),
+                    Key.Y => applications.HandleEditorRedo(),
+                    _ => false
+                };
+
+                if (handled)
+                    e.Handled = true;
+            }
+
+            return;
+        }
+
+        if (e.KeyModifiers != KeyModifiers.None)
             return;
 
         if (Pages.SelectedItem is IShortcutHandler page && page.HandleShortcut(e.Key))

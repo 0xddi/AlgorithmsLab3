@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Threading;
@@ -10,9 +9,9 @@ namespace AlgorithmsUI.Views;
 
 public partial class ApplicationsView : UserControl, IShortcutHandler
 {
-    private readonly ObservableCollection<string> _undoLog = new();
-    private readonly ObservableCollection<string> _redoLog = new();
     private readonly ObservableCollection<string> _robinLog = new();
+    private readonly Control[] _panels;
+    private readonly Control[] _canvases;
 
     // Adder state & timer
     private readonly DispatcherTimer _adderTimer = new() { Interval = TimeSpan.FromMilliseconds(900) };
@@ -22,18 +21,22 @@ public partial class ApplicationsView : UserControl, IShortcutHandler
 
     // Editor state
     private readonly UndoRedoEditor _editor = new();
+    private bool _demoRunning;
 
     // Scheduler state & timer
     private readonly DispatcherTimer _robinTimer = new() { Interval = TimeSpan.FromMilliseconds(900) };
     private RoundRobinScheduler.SchedulerReport? _schedulerReport;
     private int _schedulerSliceIdx = -1;
 
+    private CancellationTokenSource? _tabTransition;
+
     public ApplicationsView()
     {
         InitializeComponent();
 
-        EditorUndoList.ItemsSource = _undoLog;
-        EditorRedoList.ItemsSource = _redoLog;
+        _panels = [PanelAdder, PanelEditor, PanelRobin];
+        _canvases = [AdderCanvas, EditorCanvas, TimelineCanvas];
+
         RobinProcessList.ItemsSource = _robinLog;
 
         _adderTimer.Tick += (_, _) => OnAdderTick();
@@ -57,6 +60,8 @@ public partial class ApplicationsView : UserControl, IShortcutHandler
         EditorUndoBtn.Click += (_, _) => EditorUndo();
         EditorRedoBtn.Click += (_, _) => EditorRedo();
         EditorClearBtn.Click += (_, _) => EditorClear();
+        EditorPresetHelloBtn.Click += (_, _) => RunHelloPreset();
+        EditorPresetTypingBtn.Click += (_, _) => _ = RunTypingDemoAsync();
 
         // Scheduler controls: ONLY update label on slider change, DO NOT auto-run
         RobinQuantumSlider.ValueChanged += (_, _) =>
@@ -80,17 +85,75 @@ public partial class ApplicationsView : UserControl, IShortcutHandler
         _robinTimer.Stop();
         RobinRunBtn.Content = "Запустить симуляцию";
 
-        PanelAdder.IsVisible = (index == 0);
-        PanelEditor.IsVisible = (index == 1);
-        PanelRobin.IsVisible = (index == 2);
-
         TabAdderBtn.Classes.Set("accent", index == 0);
         TabEditorBtn.Classes.Set("accent", index == 1);
         TabRobinBtn.Classes.Set("accent", index == 2);
 
-        AdderCanvas.IsVisible = (index == 0);
-        EditorDetailsPanel.IsVisible = (index == 1);
-        TimelineCanvas.IsVisible = (index == 2);
+        var targetPanel = _panels[index];
+        var targetCanvas = _canvases[index];
+        if (targetPanel.IsVisible && targetCanvas.IsVisible)
+            return;
+
+        _tabTransition?.Cancel();
+        _tabTransition?.Dispose();
+        var transition = new CancellationTokenSource();
+        _tabTransition = transition;
+
+        _ = AnimateTabChangeAsync(targetPanel, targetCanvas, transition.Token);
+    }
+
+    private async Task AnimateTabChangeAsync(
+        Control targetPanel,
+        Control targetCanvas,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            // The old tab is replaced at once (like any tab control); the new content then fades and slides
+            // in, which is fast to react to and still reads as motion.
+            foreach (var panel in _panels)
+            {
+                panel.IsVisible = panel == targetPanel;
+                panel.Opacity = 1;
+                panel.RenderTransform = null;
+            }
+
+            foreach (var canvas in _canvases)
+            {
+                canvas.IsVisible = canvas == targetCanvas;
+                canvas.Opacity = 1;
+                canvas.RenderTransform = null;
+            }
+
+            if (ReferenceEquals(targetCanvas, EditorCanvas))
+                SyncEditorCanvas();
+
+            await Task.WhenAll(
+                Motion.FadeSlideInAsync(targetPanel, 14, Motion.Normal, cancellationToken),
+                Motion.FadeSlideInAsync(targetCanvas, 14, Motion.Normal, cancellationToken));
+        }
+        catch (OperationCanceledException)
+        {
+            // A newer tab click owns the final state.
+        }
+        catch (Exception exception)
+        {
+            // A failed transition must still leave a usable page; otherwise log nothing and show the tab.
+            Console.Error.WriteLine($"Переключение вкладки: {exception.Message}");
+            foreach (var panel in _panels)
+            {
+                panel.IsVisible = panel == targetPanel;
+                panel.Opacity = 1;
+                panel.RenderTransform = null;
+            }
+
+            foreach (var canvas in _canvases)
+            {
+                canvas.IsVisible = canvas == targetCanvas;
+                canvas.Opacity = 1;
+                canvas.RenderTransform = null;
+            }
+        }
     }
 
     public bool HandleShortcut(Key key)
@@ -108,6 +171,26 @@ public partial class ApplicationsView : UserControl, IShortcutHandler
             if (key == Key.R) { ResetScheduler(); return true; }
         }
         return false;
+    }
+
+    /// <summary>Ctrl+Z on the applications page: only meaningful while the editor tab is open.</summary>
+    public bool HandleEditorUndo()
+    {
+        if (!PanelEditor.IsVisible)
+            return false;
+
+        EditorUndo();
+        return true;
+    }
+
+    /// <summary>Ctrl+Y on the applications page: only meaningful while the editor tab is open.</summary>
+    public bool HandleEditorRedo()
+    {
+        if (!PanelEditor.IsVisible)
+            return false;
+
+        EditorRedo();
+        return true;
     }
 
     #region Adder
@@ -217,14 +300,14 @@ public partial class ApplicationsView : UserControl, IShortcutHandler
 
     private void EditorUndo()
     {
-        _editor.Undo();
-        UpdateEditorUI();
+        if (_editor.Undo())
+            UpdateEditorUI();
     }
 
     private void EditorRedo()
     {
-        _editor.Redo();
-        UpdateEditorUI();
+        if (_editor.Redo())
+            UpdateEditorUI();
     }
 
     private void EditorClear()
@@ -233,22 +316,65 @@ public partial class ApplicationsView : UserControl, IShortcutHandler
         UpdateEditorUI();
     }
 
+    private void RunHelloPreset()
+    {
+        EditorTypeInput.Text = "Hello, world!";
+        _editor.Clear();
+        _editor.Type(EditorTypeInput.Text);
+        UpdateEditorUI();
+    }
+
+    /// <summary>Types the phrase in small chunks so the push animation can be seen several times in a row.</summary>
+    private async Task RunTypingDemoAsync()
+    {
+        if (_demoRunning)
+            return;
+
+        _demoRunning = true;
+        try
+        {
+            _editor.Clear();
+            UpdateEditorUI();
+            await Task.Delay(260);
+
+            foreach (var chunk in new[] { "Привет", ", мир", "!" })
+            {
+                _editor.Type(chunk);
+                EditorTypeInput.Text = chunk;
+                UpdateEditorUI();
+                await Task.Delay(520);
+            }
+        }
+        finally
+        {
+            _demoRunning = false;
+        }
+    }
+
     private void UpdateEditorUI()
     {
         EditorCurrentText.Text = _editor.Text;
         StatEditorLength.Value = _editor.Text.Length.ToString();
 
-        var undos = _editor.GetUndoActions();
-        var redos = _editor.GetRedoActions();
+        var undoActions = _editor.GetUndoActions();
+        var redoActions = _editor.GetRedoActions();
 
-        StatEditorUndoCount.Value = undos.Count.ToString();
-        StatEditorRedoCount.Value = redos.Count.ToString();
+        StatEditorUndoCount.Value = undoActions.Count.ToString();
+        StatEditorRedoCount.Value = redoActions.Count.ToString();
 
-        _undoLog.Clear();
-        foreach (var u in undos) _undoLog.Add(u.ToString());
+        // The canvas derives its push / transfer animation from the stack diff.
+        EditorCanvas.DocumentText = _editor.Text;
+        EditorCanvas.SetStacks(
+            undoActions.Select(action => action.ToString()).ToList(),
+            redoActions.Select(action => action.ToString()).ToList());
+    }
 
-        _redoLog.Clear();
-        foreach (var r in redos) _redoLog.Add(r.ToString());
+    private void SyncEditorCanvas()
+    {
+        EditorCanvas.DocumentText = _editor.Text;
+        EditorCanvas.SetStacks(
+            _editor.GetUndoActions().Select(action => action.ToString()).ToList(),
+            _editor.GetRedoActions().Select(action => action.ToString()).ToList());
     }
     #endregion
 
