@@ -1,4 +1,4 @@
-﻿namespace AlgorithmsCore.DataStructures;
+namespace AlgorithmsCore.DataStructures;
 
 // Реализация очереди (принцип FIFO) через односвязный список
 public interface IQueue<T>
@@ -8,8 +8,8 @@ public interface IQueue<T>
     T Top();
     bool IsEmpty();
     void Print();
+    List<T> ToList();
 }
-
 
 public class MyQueue<T> : IQueue<T>
 {
@@ -26,7 +26,6 @@ public class MyQueue<T> : IQueue<T>
     {
         list.AddLast(item);
     }
-    
 
     public T Dequeue()
     {
@@ -52,5 +51,15 @@ public class MyQueue<T> : IQueue<T>
             Console.Write(item);
             Console.Write(" ");
         }
+    }
+
+    public List<T> ToList()
+    {
+        var result = new List<T>();
+        foreach (var item in list)
+        {
+            result.Add(item);
+        }
+        return result;
     }
 }

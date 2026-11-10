@@ -1,4 +1,4 @@
-﻿namespace AlgorithmsCore.DataStructures;
+namespace AlgorithmsCore.DataStructures;
 
 // Реализация стека (принцип LIFO) через односвязный список. Stack-пойнтер здесь всегда указывает
 // на самое начало связного списка (т.е. стек всегда растёт в начале связного списка). 
@@ -23,7 +23,6 @@ public class Stack<T>
         if (IsEmpty())
             throw new InvalidOperationException("Stack is empty");
         
-        
         T value = this.list.GetFirst();
         this.list.RemoveFirst();
         return value;
@@ -42,7 +41,6 @@ public class Stack<T>
         if (IsEmpty())
             throw new InvalidOperationException("Stack is empty");
         
-        
         foreach (var item in this.list)
         {
             Console.Write(item);
@@ -53,5 +51,15 @@ public class Stack<T>
     public int GetLength()
     {
         return this.list.GetLength();
+    }
+
+    public List<T> ToList()
+    {
+        var result = new List<T>();
+        foreach (var item in this.list)
+        {
+            result.Add(item);
+        }
+        return result;
     }
 }

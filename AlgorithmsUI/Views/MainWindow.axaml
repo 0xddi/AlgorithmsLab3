@@ -1,0 +1,91 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="using:AlgorithmsUI.Views"
+        x:Class="AlgorithmsUI.Views.MainWindow"
+        Title="Динамические структуры данных — Лабораторная работа 3"
+        Width="1340" Height="860" MinWidth="1100" MinHeight="680"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource BackgroundBrush}">
+    <Grid ColumnDefinitions="250,*">
+        <!-- Sidebar: app title, sections, keyboard shortcuts. -->
+        <Border Background="{DynamicResource SidebarBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="0,0,1,0">
+            <DockPanel Margin="16,20,16,16">
+                <!-- App Title -->
+                <StackPanel DockPanel.Dock="Top" Margin="8,0,8,20" Spacing="3">
+                    <TextBlock Text="Лабораторная №3" Classes="section" Foreground="{DynamicResource VizActiveBrush}" />
+                    <TextBlock Text="Динамические структуры" FontSize="18" FontWeight="SemiBold"
+                               Foreground="{DynamicResource ForegroundBrush}" TextWrapping="Wrap" />
+                </StackPanel>
+
+                <!-- Keyboard shortcuts -->
+                <StackPanel DockPanel.Dock="Bottom" Margin="8,16,8,0" Spacing="8">
+                    <TextBlock Text="ГОРЯЧИЕ КЛАВИШИ" Classes="section" />
+                    <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="10"
+                          RowSpacing="6">
+                        <Border Classes="kbd"><TextBlock Text="Пробел" /></Border>
+                        <TextBlock Grid.Column="1" Text="выполнить всё" Classes="hint" VerticalAlignment="Center" />
+                        <Border Grid.Row="1" Classes="kbd"><TextBlock Text="→" /></Border>
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="шаг вперёд" Classes="hint" VerticalAlignment="Center" />
+                        <Border Grid.Row="2" Classes="kbd"><TextBlock Text="R" /></Border>
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="сброс / заново" Classes="hint" VerticalAlignment="Center" />
+                        <Border Grid.Row="3" Classes="kbd"><TextBlock Text="N" /></Border>
+                        <TextBlock Grid.Row="3" Grid.Column="1" Text="случайные данные" Classes="hint" VerticalAlignment="Center" />
+                    </Grid>
+                </StackPanel>
+
+                <!-- Navigation List -->
+                <ListBox x:Name="Nav" Classes="nav" SelectedIndex="0"
+                         AutomationProperties.Name="Разделы лабораторной работы">
+                    <ListBoxItem>
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <!-- Stack Icon: layers stacked vertically -->
+                            <PathIcon Width="16" Height="16" Data="M2,14 H14 V16 H2 Z M3,9.5 H13 V11.5 H3 Z M4,5 H12 V7 H4 Z M5,0.5 H11 V2.5 H5 Z" />
+                            <TextBlock Text="1. Стек" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </ListBoxItem>
+                    <ListBoxItem>
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <!-- Queue Icon: horizontal queue flow with arrow -->
+                            <PathIcon Width="16" Height="16" Data="M1,5 H4 V11 H1 Z M5.5,5 H8.5 V11 H5.5 Z M10,5 H13 V11 H10 Z M13.5,8 L16,5.5 V10.5 Z" />
+                            <TextBlock Text="2. Очередь" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </ListBoxItem>
+                    <ListBoxItem>
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <!-- Linked List Icon: nodes with pointer arrows -->
+                            <PathIcon Width="16" Height="16" Data="M1,6 H5 V10 H1 Z M5,8 H9 M7.5,6.5 L9,8 L7.5,9.5 M9,6 H13 V10 H9 Z M13,8 H16" />
+                            <TextBlock Text="4. Связный список" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </ListBoxItem>
+                    <ListBoxItem>
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <!-- Binary Tree Icon -->
+                            <PathIcon Width="16" Height="16" Data="M7,1 H9 V4 H7 Z M3,7 H5 V10 H3 Z M11,7 H13 V10 H11 Z M4,4 L8,2 L12,4" />
+                            <TextBlock Text="3. Дерево выражений" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </ListBoxItem>
+                    <ListBoxItem>
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <!-- Applications / Tools Icon -->
+                            <PathIcon Width="16" Height="16" Data="M2,2 H6 V6 H2 Z M10,2 H14 V6 H10 Z M2,10 H6 V14 H2 Z M10,10 H14 V14 H10 Z" />
+                            <TextBlock Text="3. Прикладные задачи" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </ListBoxItem>
+                </ListBox>
+            </DockPanel>
+        </Border>
+
+        <!-- Main Pages Carousel -->
+        <Carousel Grid.Column="1" x:Name="Pages" SelectedIndex="{Binding #Nav.SelectedIndex}">
+            <Carousel.PageTransition>
+                <CrossFade Duration="0:0:0.15" />
+            </Carousel.PageTransition>
+            <views:StackView />
+            <views:QueueView />
+            <views:LinkedListView />
+            <views:ExpressionTreeView />
+            <views:ApplicationsView />
+        </Carousel>
+    </Grid>
+</Window>

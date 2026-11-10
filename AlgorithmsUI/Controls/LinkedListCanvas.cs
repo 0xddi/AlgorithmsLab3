@@ -1,0 +1,329 @@
+using System.Globalization;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Media;
+using AlgorithmsUI.Theme;
+
+namespace AlgorithmsUI.Controls;
+
+public sealed class LinkedListCanvas : Control
+{
+    private static readonly IBrush NodeBgBrush = Palette.Brush(Palette.SurfaceRaised);
+    private static readonly IBrush PointerBgBrush = Palette.Brush(Palette.Surface);
+    private static readonly IBrush TextBrush = Palette.Brush(Palette.Foreground);
+    private static readonly IBrush MutedTextBrush = Palette.Brush(Palette.MutedForeground);
+    private static readonly IBrush HeadBrush = Palette.Brush(Palette.VizActive);
+    private static readonly IBrush TailBrush = Palette.Brush(Palette.VizWrite);
+    private static readonly IBrush ArrowBrush = Palette.Brush(Palette.VizActive);
+    private static readonly IBrush NullBrush = Palette.Brush(Palette.MutedForeground);
+    private static readonly IPen NodeBorderPen = new Pen(Palette.Brush(Palette.Border), 1.5);
+    private static readonly IPen ArrowPen = new Pen(Palette.Brush(Palette.VizActive), 2);
+    private static readonly IPen HighlightPen = new Pen(Palette.Brush(Palette.VizCompare), 2);
+
+    private IReadOnlyList<string> _primaryList = Array.Empty<string>();
+    private IReadOnlyList<string>? _secondaryList;
+    private string? _statusAction;
+    private int _highlightIndex1 = -1;
+    private int _highlightIndex2 = -1;
+
+    public IReadOnlyList<string> PrimaryList
+    {
+        get => _primaryList;
+        set
+        {
+            _primaryList = value ?? Array.Empty<string>();
+            InvalidateVisual();
+        }
+    }
+
+    public IReadOnlyList<string>? SecondaryList
+    {
+        get => _secondaryList;
+        set
+        {
+            _secondaryList = value;
+            InvalidateVisual();
+        }
+    }
+
+    public string? StatusAction
+    {
+        get => _statusAction;
+        set
+        {
+            _statusAction = value;
+            InvalidateVisual();
+        }
+    }
+
+    public void SetHighlights(int idx1, int idx2)
+    {
+        _highlightIndex1 = idx1;
+        _highlightIndex2 = idx2;
+        InvalidateVisual();
+    }
+
+    protected override Size MeasureOverride(Size availableSize)
+    {
+        double w = double.IsInfinity(availableSize.Width) ? 800 : availableSize.Width;
+        double nodeWidth = 76;
+        double arrowLength = 34;
+        double stepX = nodeWidth + arrowLength;
+        double paddingLeft = 44;
+        double rowPitch = 44 + 58;
+
+        int nodesPerRow = Math.Max(1, (int)((w - paddingLeft - 60) / stepX));
+        int count1 = _primaryList?.Count ?? 0;
+        int rows1 = Math.Max(1, (count1 + nodesPerRow - 1) / nodesPerRow);
+        double height1 = 60 + (rows1 - 1) * rowPitch + 44 + 50;
+
+        if (_secondaryList != null && _secondaryList.Count > 0)
+        {
+            int count2 = _secondaryList.Count;
+            int rows2 = Math.Max(1, (count2 + nodesPerRow - 1) / nodesPerRow);
+            double height2 = 40 + (rows2 - 1) * rowPitch + 44 + 50;
+            double totalH = height1 + height2;
+            return new Size(availableSize.Width, double.IsInfinity(availableSize.Height) ? totalH : Math.Max(availableSize.Height, totalH));
+        }
+
+        return new Size(availableSize.Width, double.IsInfinity(availableSize.Height) ? height1 : Math.Max(availableSize.Height, height1));
+    }
+
+    public override void Render(DrawingContext context)
+    {
+        base.Render(context);
+        if (Bounds.Width < 10 || Bounds.Height < 10) return;
+
+        double w = Bounds.Width;
+        double h = Bounds.Height;
+
+        double nodeWidth = 76;
+        double arrowLength = 34;
+        double stepX = nodeWidth + arrowLength;
+        double paddingLeft = 44;
+        double rowGap = 58;
+        double rowPitch = 44 + rowGap;
+        int nodesPerRow = Math.Max(1, (int)((w - paddingLeft - 60) / stepX));
+
+        if (_secondaryList != null && _secondaryList.Count > 0)
+        {
+            int rows1 = Math.Max(1, (_primaryList.Count + nodesPerRow - 1) / nodesPerRow);
+            double h1 = (rows1 - 1) * rowPitch + 44;
+            double startY1 = 45;
+            double startY2 = Math.Max(startY1 + h1 + 65, h / 2 + 20);
+
+            DrawSingleList(context, _primaryList, "СПИСОК 1 (ДО РАЗДЕЛЕНИЯ):", startY1, w);
+            DrawSingleList(context, _secondaryList, "СПИСОК 2 (ПОСЛЕ РАЗДЕЛЕНИЯ):", startY2, w);
+        }
+        else
+        {
+            int rowCount = Math.Max(1, (_primaryList.Count + nodesPerRow - 1) / nodesPerRow);
+            double totalListHeight = (rowCount - 1) * rowPitch + 44;
+            double minCeilingY = 50;
+            double bottomMargin = string.IsNullOrEmpty(_statusAction) ? 24 : 44;
+
+            double startY;
+            if (rowCount <= 1)
+            {
+                // 1 строка: центрируем по вертикали
+                startY = Math.Max(minCeilingY, (h - totalListHeight) / 2);
+            }
+            else
+            {
+                // 2 и более строк: поднимаем вверх, пока не упрется в потолок (minCeilingY = 50)
+                double targetY = (h - totalListHeight - bottomMargin) / 2;
+                startY = Math.Max(minCeilingY, targetY);
+            }
+
+            DrawSingleList(context, _primaryList, "СВЯЗНЫЙ СПИСОК (HEAD ──► TAIL):", startY, w);
+        }
+
+        if (!string.IsNullOrEmpty(_statusAction))
+        {
+            var actionText = new FormattedText(
+                _statusAction,
+                CultureInfo.CurrentCulture,
+                FlowDirection.LeftToRight,
+                new Typeface("Cascadia Mono, Consolas", FontStyle.Normal, FontWeight.SemiBold),
+                12,
+                Palette.Brush(Palette.VizDone));
+            context.DrawText(actionText, new Point((w - actionText.Width) / 2, h - 26));
+        }
+    }
+
+    private void DrawSingleList(DrawingContext context, IReadOnlyList<string> list, string title, double startY, double width)
+    {
+        var titleText = new FormattedText(
+            title,
+            CultureInfo.CurrentCulture,
+            FlowDirection.LeftToRight,
+            new Typeface("Inter, Segoe UI", FontStyle.Normal, FontWeight.SemiBold),
+            12,
+            MutedTextBrush);
+        context.DrawText(titleText, new Point(30, startY - 28));
+
+        if (list.Count == 0)
+        {
+            var emptyText = new FormattedText(
+                "null (список пуст)",
+                CultureInfo.CurrentCulture,
+                FlowDirection.LeftToRight,
+                new Typeface("Cascadia Mono, Consolas", FontStyle.Italic, FontWeight.Normal),
+                13,
+                MutedTextBrush);
+            context.DrawText(emptyText, new Point(30, startY + 15));
+            return;
+        }
+
+        double nodeWidth = 76;
+        double nodeHeight = 44;
+        double arrowLength = 34;
+        double stepX = nodeWidth + arrowLength;
+        double paddingLeft = 44;
+        double rowGap = 58;
+        double rowPitch = nodeHeight + rowGap;
+
+        // Auto-wrap rows if nodes exceed canvas width
+        int nodesPerRow = Math.Max(1, (int)((width - paddingLeft - 60) / stepX));
+
+        for (int i = 0; i < list.Count; i++)
+        {
+            int row = i / nodesPerRow;
+            int col = i % nodesPerRow;
+
+            double x = paddingLeft + col * stepX;
+            double y = startY + row * rowPitch;
+
+            bool isHead = (i == 0);
+            bool isTail = (i == list.Count - 1);
+            bool isHighlighted = (i == _highlightIndex1 || i == _highlightIndex2);
+
+            // Node container: split into data (left 52px) and pointer (right 24px)
+            var nodeRect = new Rect(x, y, nodeWidth, nodeHeight);
+            context.FillRectangle(NodeBgBrush, nodeRect, 6);
+            context.DrawRectangle(isHighlighted ? HighlightPen : NodeBorderPen, nodeRect, 6);
+
+            // Pointer divider
+            double dividerX = x + 52;
+            context.DrawLine(NodeBorderPen, new Point(dividerX, y), new Point(dividerX, y + nodeHeight));
+
+            // Data text
+            string val = list[i];
+            var valText = new FormattedText(
+                val,
+                CultureInfo.CurrentCulture,
+                FlowDirection.LeftToRight,
+                new Typeface("Cascadia Mono, Consolas", FontStyle.Normal, FontWeight.Bold),
+                13,
+                TextBrush);
+            context.DrawText(valText, new Point(x + (52 - valText.Width) / 2, y + (nodeHeight - valText.Height) / 2));
+
+            // Pointer dot
+            double dotCenterX = dividerX + 12;
+            double dotCenterY = y + nodeHeight / 2;
+            context.FillRectangle(ArrowBrush, new Rect(dotCenterX - 3, dotCenterY - 3, 6, 6), 3);
+
+            // Arrow to next node or null
+            if (i < list.Count - 1)
+            {
+                if (col < nodesPerRow - 1)
+                {
+                    // Regular right arrow in the same row
+                    double arrowEndX = x + nodeWidth + arrowLength;
+                    DrawArrow(context, new Point(dotCenterX, dotCenterY), new Point(arrowEndX, dotCenterY));
+                }
+                else
+                {
+                    // Multi-line wrap arrow to next row (Option 1: down channel, across left, down into row)
+                    double nextRowY = y + rowPitch;
+                    DrawWrapArrow(context, new Point(dotCenterX, dotCenterY), x + nodeWidth, y + nodeHeight, nextRowY, paddingLeft, nodeHeight);
+                }
+            }
+            else
+            {
+                // Last node points to null
+                DrawArrow(context, new Point(dotCenterX, dotCenterY), new Point(x + nodeWidth + 24, dotCenterY));
+                var nullText = new FormattedText(
+                    "null",
+                    CultureInfo.CurrentCulture,
+                    FlowDirection.LeftToRight,
+                    new Typeface("Cascadia Mono, Consolas", FontStyle.Italic, FontWeight.SemiBold),
+                    12,
+                    NullBrush);
+                context.DrawText(nullText, new Point(x + nodeWidth + 28, dotCenterY - nullText.Height / 2));
+            }
+
+            // Head and Tail tags
+            if (isHead)
+            {
+                var headTag = new FormattedText(
+                    "HEAD",
+                    CultureInfo.CurrentCulture,
+                    FlowDirection.LeftToRight,
+                    new Typeface("Inter, Segoe UI", FontStyle.Normal, FontWeight.Bold),
+                    10,
+                    HeadBrush);
+                context.DrawText(headTag, new Point(x + (52 - headTag.Width) / 2, y - 18));
+            }
+            if (isTail)
+            {
+                var tailTag = new FormattedText(
+                    "TAIL",
+                    CultureInfo.CurrentCulture,
+                    FlowDirection.LeftToRight,
+                    new Typeface("Inter, Segoe UI", FontStyle.Normal, FontWeight.Bold),
+                    10,
+                    TailBrush);
+                context.DrawText(tailTag, new Point(x + (52 - tailTag.Width) / 2, y + nodeHeight + 4));
+            }
+        }
+    }
+
+    private static void DrawArrow(DrawingContext context, Point from, Point to)
+    {
+        context.DrawLine(ArrowPen, from, to);
+        var headGeo = new StreamGeometry();
+        using (var ctx = headGeo.Open())
+        {
+            ctx.BeginFigure(new Point(to.X - 6, to.Y - 4), true);
+            ctx.LineTo(to);
+            ctx.LineTo(new Point(to.X - 6, to.Y + 4));
+        }
+        context.DrawGeometry(ArrowBrush, ArrowPen, headGeo);
+    }
+
+    private static void DrawWrapArrow(DrawingContext context, Point from, double nodeRightX, double rowBottomY, double nextRowY, double nextRowX, double nodeHeight)
+    {
+        // 1. Right exit from current node
+        double exitX = nodeRightX + 16;
+        // 2. Channel halfway between current row bottom and next row top
+        double channelY = (rowBottomY + nextRowY) / 2;
+        // 3. Left turnaround position to the left of next row's head
+        double leftTurnX = nextRowX - 22;
+        // 4. Center of the next row's first node
+        double targetY = nextRowY + nodeHeight / 2;
+        Point targetPoint = new Point(nextRowX, targetY);
+
+        var geo = new StreamGeometry();
+        using (var ctx = geo.Open())
+        {
+            ctx.BeginFigure(from, false);
+            ctx.LineTo(new Point(exitX, from.Y));
+            ctx.LineTo(new Point(exitX, channelY));
+            ctx.LineTo(new Point(leftTurnX, channelY));
+            ctx.LineTo(new Point(leftTurnX, targetY));
+            ctx.LineTo(targetPoint);
+        }
+        context.DrawGeometry(null, ArrowPen, geo);
+
+        // Arrow head pointing right into the first node of the next row
+        var headGeo = new StreamGeometry();
+        using (var ctx = headGeo.Open())
+        {
+            ctx.BeginFigure(new Point(targetPoint.X - 7, targetPoint.Y - 5), true);
+            ctx.LineTo(targetPoint);
+            ctx.LineTo(new Point(targetPoint.X - 7, targetPoint.Y + 5));
+        }
+        context.DrawGeometry(ArrowBrush, ArrowPen, headGeo);
+    }
+}

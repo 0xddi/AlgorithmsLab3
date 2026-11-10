@@ -1,4 +1,4 @@
-﻿namespace AlgorithmsCore.DataStructures;
+namespace AlgorithmsCore.DataStructures;
 
 public class StandardQueue<T> : IQueue<T>
 {
@@ -13,4 +13,6 @@ public class StandardQueue<T> : IQueue<T>
     {
         Console.Write(string.Join(" ", _queue) + " ");
     }
+
+    public List<T> ToList() => _queue.ToList();
 }

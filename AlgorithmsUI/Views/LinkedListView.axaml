@@ -1,0 +1,134 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="using:AlgorithmsUI.Controls"
+             x:Class="AlgorithmsUI.Views.LinkedListView">
+    <Grid RowDefinitions="Auto,*" ColumnDefinitions="400,*" Margin="24,20,24,24">
+        <!-- Header -->
+        <StackPanel Grid.ColumnSpan="2" Spacing="4" Margin="0,0,0,16">
+            <TextBlock Classes="h1" Text="4 часть. Алгоритмы работы со СВОИМИ связными списками" />
+            <TextBlock Classes="subtitle"
+                       Text="Односвязный список с указателями head и tail. Наглядная пошаговая визуализация всех 12 операций: переворот, перенос элементов, поиск уникальных, вставка, удаление, слияние, разбиение и обмен узлов." />
+        </StackPanel>
+
+        <!-- Left Column: Operations & Inputs -->
+        <DockPanel Grid.Row="1">
+            <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                <StackPanel Spacing="12" Margin="0,0,0,12">
+                    <!-- List Initialization -->
+                    <Border Classes="card">
+                        <StackPanel Spacing="10">
+                            <TextBlock Classes="section" Text="ИСХОДНЫЙ СПИСОК (ДАННЫЕ)" />
+                            <TextBlock Classes="hint" Text="Числа через пробел или запятую" />
+                            <TextBox x:Name="ListInput" Text="14 8 23 8 42 15 8 99" />
+                            
+                            <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                                <Button x:Name="ApplyListBtn" Content="Загрузить список" Classes="wide accent" />
+                                <Button Grid.Column="1" x:Name="RandomListBtn" Content="Случайный" Classes="wide" />
+                            </Grid>
+                            <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                                <Button x:Name="PresetSortedBtn" Content="Отсортированный" Classes="wide" />
+                                <Button Grid.Column="1" x:Name="PresetDupesBtn" Content="С дубликатами" Classes="wide" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- 12 ALGORITHMS BUTTONS & PARAMETERS -->
+                    <Border Classes="card">
+                        <StackPanel Spacing="10">
+                            <TextBlock Classes="section" Text="12 АЛГОРИТМОВ НАД СПИСКОМ" />
+
+                            <!-- 1. Reverse -->
+                            <Button x:Name="Op1ReverseBtn" Content="1. Перевернуть (Reverse)" Classes="wide" />
+
+                            <!-- 2. Move Last to First / First to Last -->
+                            <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                <Button x:Name="Op2LastToFirstBtn" Content="2а. Хвост ➔ Голова" Classes="wide" />
+                                <Button Grid.Column="1" x:Name="Op2FirstToLastBtn" Content="2б. Голова ➔ Хвост" Classes="wide" />
+                            </Grid>
+
+                            <!-- 3 & 4. Distinct & Remove non-unique -->
+                            <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                <Button x:Name="Op3CountDistinctBtn" Content="3. Уникальные" Classes="wide" />
+                                <Button Grid.Column="1" x:Name="Op4RemoveNonUniqueBtn" Content="4. Без повторов" Classes="wide" />
+                            </Grid>
+
+                            <!-- 5. Insert self after x -->
+                            <Grid ColumnDefinitions="*,90" ColumnSpacing="8">
+                                <Button x:Name="Op5InsertSelfBtn" Content="5. Вставить себя за X" Classes="wide" />
+                                <TextBox Grid.Column="1" x:Name="Op5XInput" Text="23" PlaceholderText="X" />
+                            </Grid>
+
+                            <!-- 6. Insert sorted -->
+                            <Grid ColumnDefinitions="*,90" ColumnSpacing="8">
+                                <Button x:Name="Op6InsertSortedBtn" Content="6. Вставка с порядком" Classes="wide" />
+                                <TextBox Grid.Column="1" x:Name="Op6EInput" Text="30" PlaceholderText="E" />
+                            </Grid>
+
+                            <!-- 7. Remove all occurrences of E -->
+                            <Grid ColumnDefinitions="*,90" ColumnSpacing="8">
+                                <Button x:Name="Op7RemoveAllBtn" Content="7. Удалить все E" Classes="wide" />
+                                <TextBox Grid.Column="1" x:Name="Op7EInput" Text="8" PlaceholderText="E" />
+                            </Grid>
+
+                            <!-- 8. Insert F before E -->
+                            <Grid ColumnDefinitions="*,56,56" ColumnSpacing="6">
+                                <Button x:Name="Op8InsertBeforeBtn" Content="8. Вставить F до E" Classes="wide" />
+                                <TextBox Grid.Column="1" x:Name="Op8EInput" Text="42" PlaceholderText="E" />
+                                <TextBox Grid.Column="2" x:Name="Op8FInput" Text="999" PlaceholderText="F" />
+                            </Grid>
+
+                            <!-- 9. Append list E -->
+                            <Grid ColumnDefinitions="*,110" ColumnSpacing="8">
+                                <Button x:Name="Op9AppendBtn" Content="9. Дописать список" Classes="wide" />
+                                <TextBox Grid.Column="1" x:Name="Op9ListInput" Text="100 200 300" PlaceholderText="E..." />
+                            </Grid>
+
+                            <!-- 10. Split by first occurrence -->
+                            <Grid ColumnDefinitions="*,90" ColumnSpacing="8">
+                                <Button x:Name="Op10SplitBtn" Content="10. Разбить по X" Classes="wide" />
+                                <TextBox Grid.Column="1" x:Name="Op10TargetInput" Text="42" PlaceholderText="Число" />
+                            </Grid>
+
+                            <!-- 11. Double list -->
+                            <Button x:Name="Op11DoubleBtn" Content="11. Удвоить список (Double)" Classes="wide" />
+
+                            <!-- 12. Swap elements -->
+                            <Grid ColumnDefinitions="*,56,56" ColumnSpacing="6">
+                                <Button x:Name="Op12SwapBtn" Content="12. Обменять (Swap)" Classes="wide" />
+                                <TextBox Grid.Column="1" x:Name="Op12Idx1Input" Text="1" PlaceholderText="Инд 1" />
+                                <TextBox Grid.Column="2" x:Name="Op12Idx2Input" Text="4" PlaceholderText="Инд 2" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Indicators -->
+                    <Border Classes="card">
+                        <StackPanel Spacing="8">
+                            <TextBlock Classes="section" Text="ХАРАКТЕРИСТИКИ СПИСКА" />
+                            <controls:StatRow x:Name="StatListLength" Label="Длина списка" Value="0" />
+                            <controls:StatRow x:Name="StatHead" Label="Голова (Head)" Value="—" />
+                            <controls:StatRow x:Name="StatTail" Label="Хвост (Tail)" Value="—" />
+                            <controls:StatRow x:Name="StatDistinct" Label="Кол-во различных" Value="—" />
+                            <controls:StatRow x:Name="StatOpTime" Label="Время операции" Value="—" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Operations Log -->
+                    <Border Classes="card" Padding="0">
+                        <DockPanel MinHeight="140" MaxHeight="220">
+                            <TextBlock DockPanel.Dock="Top" Classes="section" Text="ИСТОРИЯ ОПЕРАЦИЙ" Margin="16,12,16,4" />
+                            <ListBox x:Name="ListLogList" Classes="log" Background="Transparent" />
+                        </DockPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </DockPanel>
+
+        <!-- Right Column: Canvas / Visualizer -->
+        <Border Grid.Row="1" Grid.Column="1" Classes="canvas">
+            <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                <controls:LinkedListCanvas x:Name="VisualCanvas" Margin="16" />
+            </ScrollViewer>
+        </Border>
+    </Grid>
+</UserControl>
