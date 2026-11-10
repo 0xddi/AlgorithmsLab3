@@ -16,6 +16,7 @@ public partial class QueueView : UserControl, IShortcutHandler
 
     private List<QueueProcessor.QueueStep> _opSteps = new();
     private int _currentOpStep = 0;
+    private CancellationTokenSource? _tabTransition;
 
     public QueueView()
     {
@@ -53,11 +54,41 @@ public partial class QueueView : UserControl, IShortcutHandler
         _timer.Stop();
         RunAllBtn.Content = "Старт (Авто)";
 
-        PanelOperations.IsVisible = (tabIndex == 0);
-        PanelBenchmark.IsVisible = (tabIndex == 1);
-
         TabOpsBtn.Classes.Set("accent", tabIndex == 0);
         TabBenchBtn.Classes.Set("accent", tabIndex == 1);
+
+        var panels = new[] { PanelOperations, PanelBenchmark };
+        var target = panels[tabIndex];
+        if (target.IsVisible)
+            return;
+
+        _tabTransition?.Cancel();
+        _tabTransition?.Dispose();
+        var transition = new CancellationTokenSource();
+        _tabTransition = transition;
+        _ = AnimateTabChangeAsync(target, panels, transition.Token);
+    }
+
+    private static async Task AnimateTabChangeAsync(
+        Control target,
+        IReadOnlyList<Control> panels,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            foreach (var panel in panels)
+            {
+                panel.IsVisible = panel == target;
+                panel.Opacity = 1;
+                panel.RenderTransform = null;
+            }
+
+            await Motion.FadeSlideInAsync(target, 14, Motion.Normal, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            // A newer tab click owns the final state.
+        }
     }
 
     public bool HandleShortcut(Key key)

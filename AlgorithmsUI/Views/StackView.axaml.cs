@@ -21,6 +21,7 @@ public partial class StackView : UserControl, IShortcutHandler
 
     private List<PostfixEvaluator.EvalStep> _evalSteps = new();
     private int _currentEvalStep = 0;
+    private CancellationTokenSource? _tabTransition;
 
     public StackView()
     {
@@ -74,13 +75,42 @@ public partial class StackView : UserControl, IShortcutHandler
         _evalTimer.Stop();
         EvalPostfixBtn.Content = "Вычислить (Авто)";
 
-        PanelOperations.IsVisible = (tabIndex == 0);
-        PanelCalculator.IsVisible = (tabIndex == 1);
-        PanelBenchmark.IsVisible = (tabIndex == 2);
-
         TabOpsBtn.Classes.Set("accent", tabIndex == 0);
         TabCalcBtn.Classes.Set("accent", tabIndex == 1);
         TabBenchBtn.Classes.Set("accent", tabIndex == 2);
+
+        var panels = new[] { PanelOperations, PanelCalculator, PanelBenchmark };
+        var target = panels[tabIndex];
+        if (target.IsVisible)
+            return;
+
+        _tabTransition?.Cancel();
+        _tabTransition?.Dispose();
+        var transition = new CancellationTokenSource();
+        _tabTransition = transition;
+        _ = AnimateTabChangeAsync(target, panels, transition.Token);
+    }
+
+    private static async Task AnimateTabChangeAsync(
+        Control target,
+        IReadOnlyList<Control> panels,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            foreach (var panel in panels)
+            {
+                panel.IsVisible = panel == target;
+                panel.Opacity = 1;
+                panel.RenderTransform = null;
+            }
+
+            await Motion.FadeSlideInAsync(target, 14, Motion.Normal, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            // A newer tab click owns the final state.
+        }
     }
 
     public bool HandleShortcut(Key key)

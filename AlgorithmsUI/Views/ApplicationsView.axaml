@@ -5,7 +5,7 @@
     <Grid RowDefinitions="Auto,*" ColumnDefinitions="390,*" Margin="24,20,24,24">
         <!-- Header -->
         <StackPanel Grid.ColumnSpan="2" Spacing="4" Margin="0,0,0,16">
-            <TextBlock Classes="h1" Text="3 часть. Применение динамических структур" />
+            <TextBlock Classes="h1" Text="5 часть. Применение динамических структур" />
             <TextBlock Classes="subtitle"
                        Text="Реальные сценарии использования: Список для сложения бесконечно длинных чисел столбиком, Стек для системы отмены/повтора (Undo/Redo), Очередь для карусельного планировщика процессов ОС (Round Robin)." />
         </StackPanel>
@@ -111,19 +111,19 @@
                         </Border>
 
                         <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
-                            <Border Classes="card" Padding="0">
-                                <DockPanel MinHeight="130" MaxHeight="180">
-                                    <TextBlock DockPanel.Dock="Top" Classes="section" Text="СТЕК UNDO" Margin="12,10,12,4" />
-                                    <ListBox x:Name="EditorUndoList" Classes="log" Background="Transparent" />
-                                </DockPanel>
-                            </Border>
-                            <Border Grid.Column="1" Classes="card" Padding="0">
-                                <DockPanel MinHeight="130" MaxHeight="180">
-                                    <TextBlock DockPanel.Dock="Top" Classes="section" Text="СТЕК REDO" Margin="12,10,12,4" />
-                                    <ListBox x:Name="EditorRedoList" Classes="log" Background="Transparent" />
-                                </DockPanel>
-                            </Border>
+                            <Button x:Name="EditorPresetHelloBtn" Content="Пример: Hello" Classes="wide" />
+                            <Button Grid.Column="1" x:Name="EditorPresetTypingBtn" Content="Пример: Набор текста" Classes="wide" />
                         </Grid>
+
+                        <Border Classes="card">
+                            <StackPanel Spacing="6">
+                                <TextBlock Classes="section" Text="СЛОЖНОСТЬ ОПЕРАЦИЙ" />
+                                <TextBlock Classes="label" Text="• Type / Delete — O(1) push в стек отмен" />
+                                <TextBlock Classes="label" Text="• Undo — O(1) pop из undo + push в redo" />
+                                <TextBlock Classes="label" Text="• Redo — O(1) pop из redo + push в undo" />
+                                <TextBlock Classes="hint" Text="Стеки анимируются на главном полотне справа: Ctrl+Z — отменить, Ctrl+Y — повторить." />
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
 
                     <!-- TAB 3: ROUND ROBIN SCHEDULER -->
@@ -172,22 +172,8 @@
         <Border Grid.Row="1" Grid.Column="1" Classes="canvas">
             <Panel>
                 <controls:AdditionCanvas x:Name="AdderCanvas" Margin="16" />
+                <controls:UndoRedoCanvas x:Name="EditorCanvas" Margin="16" IsVisible="False" />
                 <controls:TimelineCanvas x:Name="TimelineCanvas" Margin="16" IsVisible="False" />
-                
-                <!-- Placeholder for Editor tab right area -->
-                <StackPanel x:Name="EditorDetailsPanel" Margin="24" Spacing="16" IsVisible="False" VerticalAlignment="Center" HorizontalAlignment="Center">
-                    <TextBlock Classes="h1" Text="Архитектура Undo / Redo на двух стеках" HorizontalAlignment="Center" />
-                    <TextBlock Classes="subtitle" Text="При вводе нового текста создается действие и помещается в UndoStack, а RedoStack очищается (новая ветка истории). При нажатии Undo действие извлекается из UndoStack, отменяется и кладется в RedoStack. При Redo — наоборот." HorizontalAlignment="Center" MaxWidth="600" TextAlignment="Center" />
-                    <Border Classes="card" MaxWidth="500" HorizontalAlignment="Center">
-                        <StackPanel Spacing="8">
-                            <TextBlock Classes="section" Text="ВРЕМЕННАЯ СЛОЖНОСТЬ" />
-                            <TextBlock Classes="label" Text="• Type(text): O(1) push в стек отмен" />
-                            <TextBlock Classes="label" Text="• Delete(count): O(1) push в стек отмен" />
-                            <TextBlock Classes="label" Text="• Undo(): O(1) pop из undo + O(1) push в redo" />
-                            <TextBlock Classes="label" Text="• Redo(): O(1) pop из redo + O(1) push в undo" />
-                        </StackPanel>
-                    </Border>
-                </StackPanel>
             </Panel>
         </Border>
     </Grid>
