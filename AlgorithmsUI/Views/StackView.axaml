@@ -21,7 +21,7 @@
                             <Grid ColumnDefinitions="*,*,*" ColumnSpacing="4">
                                 <Button x:Name="TabOpsBtn" Content="Операции" Classes="wide accent" />
                                 <Button Grid.Column="1" x:Name="TabCalcBtn" Content="Калькулятор" Classes="wide" />
-                                <Button Grid.Column="2" x:Name="TabBenchBtn" Content="Замер O(1)" Classes="wide" />
+                                <Button Grid.Column="2" x:Name="TabBenchBtn" Content="Замер" Classes="wide" />
                             </Grid>
                         </StackPanel>
                     </Border>
@@ -160,7 +160,10 @@
 
         <!-- Right Column: Canvas / Visualizer -->
         <Border Grid.Row="1" Grid.Column="1" Classes="canvas">
-            <controls:StackCanvas x:Name="VisualCanvas" Margin="16" />
+            <Panel>
+                <controls:StackCanvas x:Name="VisualCanvas" Margin="16" />
+                <controls:BenchmarkCanvas x:Name="BenchCanvas" Margin="16" IsVisible="False" />
+            </Panel>
         </Border>
     </Grid>
 </UserControl>
