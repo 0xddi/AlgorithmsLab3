@@ -162,7 +162,7 @@ public sealed class StackCanvas : AnimatedControl
         context.DrawGeometry(null, BeakerPen, geometry);
 
         var header = new FormattedText(
-            "ВЕРШИНА СТЕКА (TOP)",
+            "ВЕРШИНА СТЕКА",
             CultureInfo.CurrentCulture,
             FlowDirection.LeftToRight,
             new Typeface("Inter, Segoe UI", FontStyle.Normal, FontWeight.SemiBold),
@@ -232,7 +232,7 @@ public sealed class StackCanvas : AnimatedControl
                     // The TOP marker breathes slowly so the eye finds the working end of the stack.
                     double glow = 0.55 + 0.45 * Ease.Pulse(_time, 0.9);
                     var topLabel = new FormattedText(
-                        "◄── TOP",
+                        "◄── ВЕРШИНА",
                         CultureInfo.CurrentCulture,
                         FlowDirection.LeftToRight,
                         new Typeface("Inter, Segoe UI", FontStyle.Normal, FontWeight.Bold),

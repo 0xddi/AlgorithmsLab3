@@ -67,8 +67,8 @@
                             <StackPanel Spacing="8">
                                 <TextBlock Classes="section" Text="ПОКАЗАТЕЛИ ОЧЕРЕДИ" />
                                 <controls:StatRow x:Name="StatCurrentSize" Label="Элементов в очереди" Value="0" />
-                                <controls:StatRow x:Name="StatHeadElem" Label="Голова (Head/Top)" Value="—" />
-                                <controls:StatRow x:Name="StatTailElem" Label="Хвост (Tail)" Value="—" />
+                                <controls:StatRow x:Name="StatHeadElem" Label="Голова" Value="—" />
+                                <controls:StatRow x:Name="StatTailElem" Label="Хвост" Value="—" />
                                 <controls:StatRow x:Name="StatStepProgress" Label="Текущий шаг" Value="0 / 0" />
                                 <controls:StatRow x:Name="StatExecTime" Label="Время выполнения" Value="—" />
                                 <controls:StatRow x:Name="StatComplexity" Label="Теоретическая сложность" Value="O(1)" />

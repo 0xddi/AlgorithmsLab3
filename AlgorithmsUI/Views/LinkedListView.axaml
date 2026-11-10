@@ -106,8 +106,8 @@
                         <StackPanel Spacing="8">
                             <TextBlock Classes="section" Text="ХАРАКТЕРИСТИКИ СПИСКА" />
                             <controls:StatRow x:Name="StatListLength" Label="Длина списка" Value="0" />
-                            <controls:StatRow x:Name="StatHead" Label="Голова (Head)" Value="—" />
-                            <controls:StatRow x:Name="StatTail" Label="Хвост (Tail)" Value="—" />
+                            <controls:StatRow x:Name="StatHead" Label="Голова" Value="—" />
+                            <controls:StatRow x:Name="StatTail" Label="Хвост" Value="—" />
                             <controls:StatRow x:Name="StatDistinct" Label="Кол-во различных" Value="—" />
                             <controls:StatRow x:Name="StatOpTime" Label="Время операции" Value="—" />
                         </StackPanel>
