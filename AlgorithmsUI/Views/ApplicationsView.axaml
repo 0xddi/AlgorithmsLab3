@@ -5,7 +5,7 @@
     <Grid RowDefinitions="Auto,*" ColumnDefinitions="390,*" Margin="24,20,24,24">
         <!-- Header -->
         <StackPanel Grid.ColumnSpan="2" Spacing="4" Margin="0,0,0,16">
-            <TextBlock Classes="h1" Text="3 часть. Применение динамических структур" />
+            <TextBlock Classes="h1" Text="5 часть. Применение динамических структур" />
             <TextBlock Classes="subtitle"
                        Text="Реальные сценарии использования: Список для сложения бесконечно длинных чисел столбиком, Стек для системы отмены/повтора (Undo/Redo), Очередь для карусельного планировщика процессов ОС (Round Robin)." />
         </StackPanel>
