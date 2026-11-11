@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\dimai\\RiderProjects\\algorithms\\AlgorithmsLab3\\AlgorithmsCore\\AlgorithmsCore.csproj": {}
+    "D:\\GitHub\\Java\\AlgorithmsLab3\\AlgorithmsCore\\AlgorithmsCore.csproj": {}
   },
   "projects": {
-    "C:\\Users\\dimai\\RiderProjects\\algorithms\\AlgorithmsLab3\\AlgorithmsCore\\AlgorithmsCore.csproj": {
+    "D:\\GitHub\\Java\\AlgorithmsLab3\\AlgorithmsCore\\AlgorithmsCore.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\dimai\\RiderProjects\\algorithms\\AlgorithmsLab3\\AlgorithmsCore\\AlgorithmsCore.csproj",
+        "projectUniqueName": "D:\\GitHub\\Java\\AlgorithmsLab3\\AlgorithmsCore\\AlgorithmsCore.csproj",
         "projectName": "AlgorithmsCore",
-        "projectPath": "C:\\Users\\dimai\\RiderProjects\\algorithms\\AlgorithmsLab3\\AlgorithmsCore\\AlgorithmsCore.csproj",
-        "packagesPath": "C:\\Users\\dimai\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\dimai\\RiderProjects\\algorithms\\AlgorithmsLab3\\AlgorithmsCore\\obj\\",
+        "projectPath": "D:\\GitHub\\Java\\AlgorithmsLab3\\AlgorithmsCore\\AlgorithmsCore.csproj",
+        "packagesPath": "C:\\Users\\ishma\\.nuget\\packages\\",
+        "outputPath": "D:\\GitHub\\Java\\AlgorithmsLab3\\AlgorithmsCore\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\dimai\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\ishma\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net10.0"
@@ -24,6 +24,7 @@
         },
         "frameworks": {
           "net10.0": {
+            "framework": "net10.0",
             "targetAlias": "net10.0",
             "projectReferences": {}
           }
@@ -38,10 +39,11 @@
           "auditLevel": "low",
           "auditMode": "all"
         },
-        "SdkAnalysisLevel": "10.0.200"
+        "SdkAnalysisLevel": "10.0.400"
       },
       "frameworks": {
         "net10.0": {
+          "framework": "net10.0",
           "targetAlias": "net10.0",
           "imports": [
             "net461",
@@ -59,7 +61,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.201/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "C:\\Users\\ishma\\.dotnet\\sdk\\10.0.401/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.CSharp": "(,4.7.32767]",
             "Microsoft.VisualBasic": "(,10.4.32767]",

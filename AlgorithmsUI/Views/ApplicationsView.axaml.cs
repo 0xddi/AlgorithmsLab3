@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Threading;
@@ -10,6 +11,7 @@ namespace AlgorithmsUI.Views;
 public partial class ApplicationsView : UserControl, IShortcutHandler
 {
     private readonly ObservableCollection<string> _robinLog = new();
+    private readonly ObservableCollection<string> _treeLog = new();
     private readonly Control[] _panels;
     private readonly Control[] _canvases;
 
@@ -34,10 +36,11 @@ public partial class ApplicationsView : UserControl, IShortcutHandler
     {
         InitializeComponent();
 
-        _panels = [PanelAdder, PanelEditor, PanelRobin];
-        _canvases = [AdderCanvas, EditorCanvas, TimelineCanvas];
+        _panels = [PanelAdder, PanelEditor, PanelRobin, PanelTree];
+        _canvases = [AdderCanvas, EditorCanvas, TimelineCanvas, TreeCanvas];
 
         RobinProcessList.ItemsSource = _robinLog;
+        TreeLogList.ItemsSource = _treeLog;
 
         _adderTimer.Tick += (_, _) => OnAdderTick();
         _robinTimer.Tick += (_, _) => OnRobinTick();
@@ -46,6 +49,7 @@ public partial class ApplicationsView : UserControl, IShortcutHandler
         TabAdderBtn.Click += (_, _) => SwitchTab(0);
         TabEditorBtn.Click += (_, _) => SwitchTab(1);
         TabRobinBtn.Click += (_, _) => SwitchTab(2);
+        TabTreeBtn.Click += (_, _) => SwitchTab(3);
 
         // Adder controls
         AdderRunBtn.Click += (_, _) => ToggleAdderPlay();
@@ -72,10 +76,18 @@ public partial class ApplicationsView : UserControl, IShortcutHandler
         RobinStepBtn.Click += (_, _) => StepScheduler();
         RobinResetBtn.Click += (_, _) => ResetScheduler();
 
+        // Tree controls
+        TreeBuildBtn.Click += (_, _) => BuildTreeAndEvaluate();
+        TreeStepBtn.Click += (_, _) => StepTreeBuild();
+        TreePresetDocBtn.Click += (_, _) => SetTreePreset("7 8 + 3 2 + :");
+        TreePresetComplexBtn.Click += (_, _) => SetTreePreset("3 4 2 * 1 5 - 2 3 ^ ^ / +");
+        TreePresetFuncBtn.Click += (_, _) => SetTreePreset("16 sqrt 2 ^ 3 +");
+
         // Initial setup
         ResetAdder();
         UpdateEditorUI();
         ResetScheduler(); // Starts clean and empty as requested
+        BuildTreeAndEvaluate(); // первичное построение дерева
     }
 
     private void SwitchTab(int index)
@@ -88,6 +100,7 @@ public partial class ApplicationsView : UserControl, IShortcutHandler
         TabAdderBtn.Classes.Set("accent", index == 0);
         TabEditorBtn.Classes.Set("accent", index == 1);
         TabRobinBtn.Classes.Set("accent", index == 2);
+        TabTreeBtn.Classes.Set("accent", index == 3);
 
         var targetPanel = _panels[index];
         var targetCanvas = _canvases[index];
@@ -169,6 +182,12 @@ public partial class ApplicationsView : UserControl, IShortcutHandler
             if (key == Key.Space) { ToggleRobinPlay(); return true; }
             if (key == Key.Right) { StepScheduler(); return true; }
             if (key == Key.R) { ResetScheduler(); return true; }
+        }
+        else if (PanelTree.IsVisible)
+        {
+            if (key == Key.Space) { BuildTreeAndEvaluate(); return true; }
+            if (key == Key.Right) { StepTreeBuild(); return true; }
+            if (key == Key.R) { SetTreePreset(TreePostfixInput.Text ?? ""); return true; }
         }
         return false;
     }
@@ -466,6 +485,70 @@ public partial class ApplicationsView : UserControl, IShortcutHandler
             {
                 _robinLog.Add($"{p.Name,-7} | {p.Burst,12} | {p.FinishTime,8} | {p.WaitingTime,8}");
             }
+        }
+    }
+    #endregion
+
+    #region Tree
+    /// <summary>
+    /// "Шаг" advances the build by one token. With no build in progress (or after it has finished) it starts
+    /// a paused step-by-step build of the current expression.
+    /// </summary>
+    private void StepTreeBuild()
+    {
+        if (!TreeCanvas.StepBuild())
+            BuildTreeAndEvaluate(auto: false);
+    }
+
+    private void SetTreePreset(string postfix)
+    {
+        TreePostfixInput.Text = postfix;
+        BuildTreeAndEvaluate();
+    }
+
+    private void BuildTreeAndEvaluate(bool auto = true)
+    {
+        string postfix = TreePostfixInput.Text?.Trim() ?? "";
+        if (string.IsNullOrEmpty(postfix)) return;
+
+        try
+        {
+            var sw = Stopwatch.StartNew();
+            var tree = ExpressionTree.FromPostfix(postfix);
+            double result = tree.Evaluate();
+            string infix = tree.Infix();
+            string prefix = tree.Prefix();
+            string post = tree.Postfix();
+            sw.Stop();
+
+            // The canvas replays the postfix construction token by token; building the tree above already
+            // validated the expression, so this normally always succeeds.
+            var tokens = postfix.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (!TreeCanvas.PlayBuild(tokens, auto))
+                TreeCanvas.Tree = tree;
+
+            TreeStatResult.Value = $"{result:G8}";
+            TreeInfixResult.Text = infix;
+            TreePrefixResult.Text = prefix;
+            TreePostfixResult.Text = post;
+
+            TreeStatNodes.Value = tree.GetNodeCount().ToString();
+            TreeStatDepth.Value = tree.GetDepth().ToString();
+            TreeStatBuildTime.Value = TimeFormat.Format(sw.Elapsed);
+
+            _treeLog.Clear();
+            _treeLog.Add($"✓ Дерево успешно построено из: \"{postfix}\"");
+            _treeLog.Add($"  Вычислено значение: {result:G8}");
+            _treeLog.Add($"  Узлов: {tree.GetNodeCount()}, Глубина: {tree.GetDepth()}");
+        }
+        catch (Exception ex)
+        {
+            TreeCanvas.Tree = null;
+            TreeStatResult.Value = "Ошибка";
+            TreeInfixResult.Text = "—";
+            TreePrefixResult.Text = "—";
+            TreePostfixResult.Text = "—";
+            _treeLog.Insert(0, $"⚠ Ошибка разбора: {ex.Message}");
         }
     }
     #endregion

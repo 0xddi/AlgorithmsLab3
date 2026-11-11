@@ -7,7 +7,7 @@
         <StackPanel Grid.ColumnSpan="2" Spacing="4" Margin="0,0,0,16">
             <TextBlock Classes="h1" Text="5 часть. Применение динамических структур" />
             <TextBlock Classes="subtitle"
-                       Text="Реальные сценарии использования: Список для сложения бесконечно длинных чисел столбиком, Стек для системы отмены/повтора (Undo/Redo), Очередь для карусельного планировщика процессов ОС (Round Robin)." />
+                       Text="Реальные сценарии использования: Список для сложения бесконечно длинных чисел столбиком, Стек для системы отмены/повтора (Undo/Redo), Очередь для карусельного планировщика процессов ОС (Round Robin), Бинарное дерево для разбора постфиксных выражений." />
         </StackPanel>
 
         <!-- Left Column: Controls & Panels -->
@@ -18,10 +18,11 @@
                     <Border Classes="card">
                         <StackPanel Spacing="8">
                             <TextBlock Classes="section" Text="ВЫБОР ПРИМЕНЕНИЯ" />
-                            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="4">
+                            <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="4">
                                 <Button x:Name="TabAdderBtn" Content="Длинные числа" Classes="wide accent" />
                                 <Button Grid.Column="1" x:Name="TabEditorBtn" Content="Undo / Redo" Classes="wide" />
                                 <Button Grid.Column="2" x:Name="TabRobinBtn" Content="Round Robin" Classes="wide" />
+                                <Button Grid.Column="3" x:Name="TabTreeBtn" Content="Дерево выражений" Classes="wide" />
                             </Grid>
                         </StackPanel>
                     </Border>
@@ -32,7 +33,7 @@
                             <StackPanel Spacing="10">
                                 <TextBlock Classes="section" Text="СЛОЖЕНИЕ ДЛИННЫХ ЧИСЕЛ (СПИСОК)" />
                                 <TextBlock Classes="hint" Text="Цифры хранятся в связном списке от младших к старшим: O(max(N,M))" />
-                                
+
                                 <TextBlock Classes="label" Text="Число A:" />
                                 <TextBox x:Name="AdderNumAInput" Text="99999999999999999999999999" TextWrapping="Wrap" />
 
@@ -76,7 +77,7 @@
                             <StackPanel Spacing="10">
                                 <TextBlock Classes="section" Text="ТЕКСТОВЫЙ РЕДАКТОР С UNDO/REDO (СТЕК)" />
                                 <TextBlock Classes="hint" Text="Два стека EditAction: стек отмен (Undo) и стек возвратов (Redo)" />
-                                
+
                                 <TextBlock Classes="label" Text="Текущий текст документа:" />
                                 <TextBox x:Name="EditorCurrentText" IsReadOnly="True" Height="70" TextWrapping="Wrap" />
 
@@ -164,6 +165,64 @@
                             </DockPanel>
                         </Border>
                     </StackPanel>
+
+                    <!-- TAB 4: EXPRESSION TREE -->
+                    <StackPanel x:Name="PanelTree" Spacing="12" IsVisible="False">
+                        <Border Classes="card">
+                            <StackPanel Spacing="10">
+                                <TextBlock Classes="section" Text="ПОСТФИКСНОЕ ВЫРАЖЕНИЕ (ДЕРЕВО)" />
+                                <TextBlock Classes="hint" Text="Токены через пробел (+, -, *, /, :, ^, sqrt, sin, cos, ln)" />
+                                <TextBox x:Name="TreePostfixInput" Text="7 8 + 3 2 + :" TextWrapping="Wrap" />
+
+                                <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                                    <Button x:Name="TreeBuildBtn" Content="Построить и вычислить" Classes="wide accent" ToolTip.Tip="Пробел" />
+                                    <Button Grid.Column="1" x:Name="TreeStepBtn" Content="Шаг →" Classes="wide" ToolTip.Tip="→" />
+                                </Grid>
+                                <TextBlock Classes="hint" Text="«Шаг» строит дерево по одному токену: удобно разбирать алгоритм вручную." />
+
+                                <TextBlock Classes="section" Text="ШАБЛОНЫ" Margin="0,4,0,0" />
+                                <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                    <Button x:Name="TreePresetDocBtn" Content="Пример задания" Classes="wide" />
+                                    <Button Grid.Column="1" x:Name="TreePresetComplexBtn" Content="Со степенями" Classes="wide" />
+                                </Grid>
+                                <Button x:Name="TreePresetFuncBtn" Content="С функциями (sqrt, sin)" Classes="wide" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Classes="card">
+                            <StackPanel Spacing="8">
+                                <TextBlock Classes="section" Text="РЕЗУЛЬТАТЫ И ОБХОДЫ ДЕРЕВА" />
+                                <controls:StatRow x:Name="TreeStatResult" Label="Значение (Evaluate)" Value="—" />
+                                <Separator Background="{DynamicResource BorderBrush}" Height="1" Margin="0,4" />
+
+                                <TextBlock Classes="label" Text="Инфиксный обход (Infix со скобками):" />
+                                <TextBox x:Name="TreeInfixResult" IsReadOnly="True" TextWrapping="Wrap" />
+
+                                <TextBlock Classes="label" Text="Префиксный обход (Prefix):" />
+                                <TextBox x:Name="TreePrefixResult" IsReadOnly="True" TextWrapping="Wrap" />
+
+                                <TextBlock Classes="label" Text="Постфиксный обход (Postfix):" />
+                                <TextBox x:Name="TreePostfixResult" IsReadOnly="True" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Classes="card">
+                            <StackPanel Spacing="8">
+                                <TextBlock Classes="section" Text="ПАРАМЕТРЫ ДЕРЕВА" />
+                                <controls:StatRow x:Name="TreeStatNodes" Label="Всего узлов в дереве" Value="—" />
+                                <controls:StatRow x:Name="TreeStatDepth" Label="Максимальная глубина (высота)" Value="—" />
+                                <controls:StatRow x:Name="TreeStatBuildTime" Label="Время расчёта" Value="—" />
+                                <controls:StatRow x:Name="TreeStatComplexity" Label="Сложность обходов" Value="O(n) — 1 проход" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Classes="card" Padding="0">
+                            <DockPanel MinHeight="100" MaxHeight="160">
+                                <TextBlock DockPanel.Dock="Top" Classes="section" Text="ЖУРНАЛ" Margin="16,12,16,4" />
+                                <ListBox x:Name="TreeLogList" Classes="log" Background="Transparent" />
+                            </DockPanel>
+                        </Border>
+                    </StackPanel>
                 </StackPanel>
             </ScrollViewer>
         </DockPanel>
@@ -174,6 +233,7 @@
                 <controls:AdditionCanvas x:Name="AdderCanvas" Margin="16" />
                 <controls:UndoRedoCanvas x:Name="EditorCanvas" Margin="16" IsVisible="False" />
                 <controls:TimelineCanvas x:Name="TimelineCanvas" Margin="16" IsVisible="False" />
+                <controls:TreeCanvas x:Name="TreeCanvas" Margin="16" IsVisible="False" />
             </Panel>
         </Border>
     </Grid>
